@@ -90,7 +90,7 @@ export function RevenueLineChart({
               letterSpacing: "0.16em",
               marginBottom: 4,
             }}
-            formatter={(value: number) => [formatValue(value), "Ciro"]}
+            formatter={(value) => [formatValue(Number(value)), "Ciro"]}
           />
           <Line
             type="monotone"

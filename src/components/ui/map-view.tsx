@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useRef } from "react";
 import type { Listing } from "@/lib/store";
 
+// leaflet runtime CDN'den (index.html) yükleniyor; tipler için any yeterli.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type LeafletGlobal = any;
+
 declare global {
   interface Window {
-    L?: typeof import("leaflet");
+    L?: LeafletGlobal;
   }
 }
 
@@ -47,9 +51,7 @@ export function MapView({ listings, onOpen, height = 640 }: MapViewProps) {
 
   useEffect(() => {
     if (mapRef.current || !containerRef.current || !window.L) return;
-    const L = window.L as typeof import("leaflet") & {
-      markerClusterGroup: (opts: Record<string, unknown>) => unknown;
-    };
+    const L = window.L as LeafletGlobal;
 
     const map = L.map(containerRef.current, {
       center: [39.0, 35.5],

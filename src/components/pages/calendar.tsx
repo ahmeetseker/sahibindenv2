@@ -22,15 +22,15 @@ import {
 } from "@/lib/store";
 import { PageShell } from "./page-shell";
 
-const days = [
-  { name: "Pzt" as const, date: "21" },
-  { name: "Sal" as const, date: "22" },
-  { name: "Çar" as const, date: "23" },
-  { name: "Per" as const, date: "24" },
-  { name: "Cum" as const, date: "25", today: true },
-  { name: "Cmt" as const, date: "26" },
-  { name: "Paz" as const, date: "27" },
-] as const;
+const days: ReadonlyArray<{ name: string; date: string; today?: boolean }> = [
+  { name: "Pzt", date: "21" },
+  { name: "Sal", date: "22" },
+  { name: "Çar", date: "23" },
+  { name: "Per", date: "24" },
+  { name: "Cum", date: "25", today: true },
+  { name: "Cmt", date: "26" },
+  { name: "Paz", date: "27" },
+];
 
 const typeOptions: CalendarType[] = ["saha", "tapu", "gorusme"];
 const typeLabel: Record<CalendarType, string> = {
