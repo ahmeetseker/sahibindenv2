@@ -1,0 +1,536 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Warm cream / paper light — havadar, açık */
+  --background: 36 38% 98%;
+  --foreground: 28 14% 22%;
+  --muted: 34 22% 95%;
+  --muted-foreground: 28 8% 48%;
+  --border: 32 20% 90%;
+  --card: 36 40% 100%;
+  --card-foreground: 28 14% 22%;
+  --primary: 28 18% 26%;
+  --primary-foreground: 36 38% 98%;
+  --secondary: 34 22% 95%;
+  --secondary-foreground: 28 18% 26%;
+  --accent: 28 28% 26%;
+  --accent-foreground: 36 38% 98%;
+  --ring: 28 28% 26%;
+
+  --glass-tint: rgba(255, 251, 246, 0.45);
+  --glass-highlight: rgba(255, 255, 255, 0.7);
+  --glass-highlight-soft: rgba(255, 255, 255, 0.5);
+  --glass-shadow: 0 8px 24px rgba(80, 60, 40, 0.1), 0 0 16px rgba(80, 60, 40, 0.05);
+  --glass-text: rgba(50, 40, 30, 0.88);
+}
+
+.dark {
+  /* Warm brown — açık tonlar ağırlıklı, karartmasız */
+  --background: 28 10% 22%;
+  --foreground: 36 28% 92%;
+  --muted: 28 10% 28%;
+  --muted-foreground: 32 18% 76%;
+  --border: 28 10% 34%;
+  --card: 28 10% 26%;
+  --card-foreground: 36 28% 92%;
+  --primary: 36 28% 92%;
+  --primary-foreground: 28 10% 22%;
+  --secondary: 28 10% 28%;
+  --secondary-foreground: 36 28% 92%;
+  --accent: 36 28% 88%;
+  --accent-foreground: 28 14% 18%;
+  --ring: 36 28% 88%;
+
+  --glass-tint: rgba(120, 95, 75, 0.28);
+  --glass-highlight: rgba(255, 235, 210, 0.22);
+  --glass-highlight-soft: rgba(255, 235, 210, 0.12);
+  --glass-shadow: 0 8px 24px rgba(20, 14, 10, 0.45), 0 0 24px rgba(20, 14, 10, 0.22);
+  --glass-text: rgba(244, 232, 212, 0.94);
+}
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-border: hsl(var(--border));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-ring: hsl(var(--ring));
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-serif: "Lora", ui-serif, Georgia, "Times New Roman", serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+@keyframes moveBackground {
+  from {
+    background-position: 0% 0%;
+  }
+  to {
+    background-position: 0% -1000%;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass-tint: rgba(255, 255, 255, 0.96);
+    --glass-highlight: rgba(255, 255, 255, 0);
+    --glass-highlight-soft: rgba(255, 255, 255, 0);
+  }
+  .dark {
+    --glass-tint: rgba(20, 20, 22, 0.96);
+    --glass-highlight: rgba(255, 255, 255, 0);
+    --glass-highlight-soft: rgba(255, 255, 255, 0);
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --glass-tint: rgba(255, 255, 255, 0.85);
+    --glass-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 6px 6px rgba(0, 0, 0, 0.25);
+  }
+  .dark {
+    --glass-tint: rgba(20, 20, 22, 0.9);
+    --glass-shadow: 0 0 0 1px rgba(255, 255, 255, 0.4), 0 6px 12px rgba(0, 0, 0, 0.6);
+  }
+}
+
+.glass-button-wrap {
+  position: relative;
+  display: inline-block;
+  isolation: isolate;
+}
+
+.glass-button {
+  all: unset;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  cursor: pointer;
+  color: hsl(var(--foreground));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.55) 50%, rgba(255, 255, 255, 0.7) 100%);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.06),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.35),
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 8px 24px rgba(0, 0, 0, 0.08);
+  transition:
+    transform 220ms cubic-bezier(0.175, 0.885, 0.32, 2.2),
+    box-shadow 220ms ease;
+}
+
+.glass-button:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.06),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.4),
+    0 2px 4px rgba(0, 0, 0, 0.06),
+    0 16px 36px rgba(0, 0, 0, 0.12);
+}
+
+.glass-button:active {
+  transform: translateY(0);
+}
+
+.glass-button-text {
+  display: block;
+  color: inherit;
+}
+
+.glass-button-shadow {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: rgba(0, 0, 0, 0.18);
+  filter: blur(10px);
+  transform: translateY(8px) scale(0.94);
+  pointer-events: none;
+}
+
+.dark .glass-button {
+  color: hsl(var(--foreground));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.05) 50%, rgba(255, 255, 255, 0.1) 100%);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.4),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 1px 2px rgba(0, 0, 0, 0.5),
+    0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.dark .glass-button-shadow {
+  background: rgba(0, 0, 0, 0.55);
+}
+
+@keyframes dock-hint-breathe {
+  0%, 100% {
+    opacity: 0.78;
+    transform: translate(-50%, 0);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -4px);
+  }
+}
+
+.dock-hint {
+  animation: dock-hint-breathe 2.6s ease-in-out infinite;
+  transition: opacity 0.35s ease-out, transform 0.35s ease-out;
+  box-shadow:
+    0 4px 18px -2px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  will-change: transform, opacity;
+}
+
+.dock-reveal:hover .dock-hint,
+.dock-reveal:has(:hover) .dock-hint {
+  animation: none;
+  opacity: 0;
+  transform: translate(-50%, 6px);
+}
+
+@keyframes dock-hint-v-breathe {
+  0%, 100% {
+    opacity: 0.78;
+    transform: translate(0, -50%);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-4px, -50%);
+  }
+}
+
+.dock-hint-v {
+  animation: dock-hint-v-breathe 2.6s ease-in-out infinite;
+  transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+  box-shadow:
+    -4px 0 18px -2px rgba(0, 0, 0, 0.22),
+    inset 1px 0 0 rgba(255, 255, 255, 0.22);
+  will-change: transform, opacity;
+}
+
+.dock-hint-v[aria-expanded="true"] {
+  animation: none;
+  opacity: 0;
+  transform: translate(12px, -50%);
+  pointer-events: none;
+}
+
+.dark .dock-hint-v {
+  box-shadow:
+    -4px 0 22px -2px rgba(0, 0, 0, 0.6),
+    inset 1px 0 0 rgba(255, 235, 210, 0.14);
+}
+
+.dark .dock-hint {
+  box-shadow:
+    0 4px 22px -2px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 235, 210, 0.14);
+}
+
+/* Touch / coarse pointer cihazlarda dock'a tap'le erişiliyor —
+   hint görünür kalsın ki kullanıcı dock'un orada olduğunu bilsin,
+   dock kendisi de slide-in animasyonuyla açılsın (hover yerine). */
+@media (hover: none), (pointer: coarse) {
+  .dock-reveal .dock-stage {
+    transform: none !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------- Atelier Map (Leaflet) ---------- */
+.atelier-pin-wrap { background: transparent; border: none; }
+.atelier-pin {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: var(--font-sans, "Inter", system-ui, sans-serif);
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.atelier-pin-bubble {
+  position: relative;
+  isolation: isolate;
+  background: var(--glass-tint);
+  color: var(--glass-text);
+  border: 1px solid hsl(var(--border) / 0.6);
+  border-left: 3px solid var(--pc, hsl(var(--foreground)));
+  border-radius: 999px;
+  padding: 4px 11px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  box-shadow:
+    inset 1px 1px 0 0 var(--glass-highlight),
+    inset -1px -1px 0 0 var(--glass-highlight-soft),
+    var(--glass-shadow);
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.atelier-pin-stem {
+  width: 2px;
+  height: 8px;
+  background: var(--pc, hsl(var(--foreground)));
+  margin-top: -1px;
+  border-radius: 0 0 2px 2px;
+  opacity: 0.65;
+}
+.atelier-pin-wrap:hover .atelier-pin {
+  transform: translateY(-2px);
+}
+.atelier-pin-wrap:hover .atelier-pin-bubble {
+  box-shadow:
+    inset 1px 1px 0 0 var(--glass-highlight),
+    inset -1px -1px 0 0 var(--glass-highlight-soft),
+    0 14px 32px -10px rgba(50, 40, 30, 0.4),
+    0 0 22px rgba(50, 40, 30, 0.08);
+  border-color: hsl(var(--foreground) / 0.25);
+}
+
+.atelier-cluster {
+  background: transparent !important;
+  border: none !important;
+}
+.atelier-cluster-inner {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: var(--glass-tint);
+  color: var(--glass-text);
+  border: 1px solid hsl(var(--border) / 0.55);
+  border-radius: 999px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  box-shadow:
+    inset 1.5px 1.5px 0 0 var(--glass-highlight),
+    inset -1px -1px 0 0 var(--glass-highlight-soft),
+    var(--glass-shadow);
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.atelier-cluster-inner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at 30% 25%,
+    rgba(255, 255, 255, 0.35),
+    transparent 60%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+.atelier-cluster-inner > * {
+  position: relative;
+  z-index: 2;
+}
+.atelier-cluster:hover .atelier-cluster-inner {
+  transform: translateY(-1px) scale(1.04);
+  box-shadow:
+    inset 1.5px 1.5px 0 0 var(--glass-highlight),
+    inset -1px -1px 0 0 var(--glass-highlight-soft),
+    0 14px 32px -10px rgba(50, 40, 30, 0.45);
+}
+
+/* Popup (override leaflet defaults to match theme) */
+.leaflet-popup-content-wrapper.atelier-popup-wrap,
+.atelier-popup-wrap .leaflet-popup-content-wrapper {
+  position: relative;
+  isolation: isolate;
+  background: var(--glass-tint);
+  color: var(--glass-text);
+  border: 1px solid hsl(var(--border) / 0.55);
+  border-radius: 18px;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow:
+    inset 1.5px 1.5px 0 0 var(--glass-highlight),
+    inset -1px -1px 0 0 var(--glass-highlight-soft),
+    0 28px 56px -18px rgba(50, 40, 30, 0.45),
+    0 0 24px rgba(50, 40, 30, 0.06);
+  padding: 0;
+  overflow: hidden;
+}
+.leaflet-popup-content-wrapper.atelier-popup-wrap::before,
+.atelier-popup-wrap .leaflet-popup-content-wrapper::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at 25% 0%,
+    rgba(255, 255, 255, 0.28),
+    transparent 55%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+.atelier-popup-wrap .leaflet-popup-content {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  font-family: var(--font-sans, "Inter", system-ui, sans-serif);
+}
+.atelier-popup-wrap .leaflet-popup-tip {
+  background: var(--glass-tint);
+  border: 1px solid hsl(var(--border) / 0.5);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 0 8px 16px -8px rgba(50, 40, 30, 0.35);
+}
+.atelier-popup-wrap .leaflet-popup-close-button {
+  position: relative;
+  z-index: 3;
+  color: hsl(var(--muted-foreground));
+  font-size: 18px;
+  padding: 8px 10px 0 0;
+  transition: color 0.2s;
+}
+.atelier-popup-wrap .leaflet-popup-close-button:hover {
+  color: hsl(var(--foreground));
+}
+.atelier-popup {
+  padding: 16px 16px 14px;
+  width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.atelier-popup-id {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: hsl(var(--muted-foreground));
+}
+.atelier-popup-title {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: hsl(var(--foreground));
+}
+.atelier-popup-meta {
+  font-size: 12px;
+  color: hsl(var(--muted-foreground));
+}
+.atelier-popup-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+.atelier-popup-price {
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: hsl(var(--foreground));
+}
+.atelier-popup-badge {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-weight: 500;
+}
+.atelier-popup-btn {
+  margin-top: 8px;
+  width: 100%;
+  background: hsl(var(--foreground));
+  color: hsl(var(--background));
+  border: none;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.atelier-popup-btn:hover { opacity: 0.9; }
+
+/* Leaflet zoom controls themed */
+.leaflet-control-zoom a {
+  background: hsl(var(--card)) !important;
+  color: hsl(var(--foreground)) !important;
+  border-color: hsl(var(--border)) !important;
+}
+.leaflet-control-zoom a:hover {
+  background: hsl(var(--muted)) !important;
+}
+.leaflet-control-attribution {
+  background: hsl(var(--card) / 0.85) !important;
+  color: hsl(var(--muted-foreground)) !important;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 9px !important;
+  padding: 2px 6px !important;
+}
+.leaflet-control-attribution a { color: hsl(var(--foreground) / 0.7) !important; }
+
+/* Dark mode tile invert (Carto light → dark feel) */
+.dark .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.85) saturate(0.8);
+}
