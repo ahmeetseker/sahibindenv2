@@ -27,7 +27,7 @@ describe("SUMMARY_ENTRIES", () => {
     );
   });
 
-  it.each(ENTRY_IDS)("entry '%s' header.title doluysa accent boş değil", (id) => {
+  it.each(ENTRY_IDS)("entry '%s' header.title.lead ve accent ikisi de dolu", (id) => {
     const entry = SUMMARY_ENTRIES[id];
     expect(entry.header.title.lead.length).toBeGreaterThan(0);
     expect(entry.header.title.accent.length).toBeGreaterThan(0);
