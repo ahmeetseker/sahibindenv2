@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Download, Pencil, Plus, Trash2, TrendingUp } from "lucide-react";
+import type { FinanceDeepLink } from "@/components/ui/module-summary/types";
 import {
   Card,
   CardContent,
@@ -63,7 +64,11 @@ const periods = [
   { label: "Yıl", days: 365 },
 ];
 
-export function FinancePage() {
+interface FinancePageProps {
+  initial?: FinanceDeepLink | null;
+}
+
+export function FinancePage({ initial }: FinancePageProps = {}) {
   const {
     transactions,
     customers,
@@ -115,6 +120,11 @@ export function FinancePage() {
       { label: "Tapu", value: norm(counts["Tapu tamam"]) * 0.4, displayValue: `${counts["Tapu tamam"]} işlem` },
     ];
   }, [transactions]);
+
+  const visibleTransactions = useMemo(() => {
+    if (!initial?.status) return transactions;
+    return transactions.filter((t) => t.status === initial.status);
+  }, [transactions, initial?.status]);
 
   const openCreate = () => {
     setForm(emptyTx);
@@ -251,7 +261,7 @@ export function FinancePage() {
           <CardTitle className="font-serif text-lg font-light">
             Son işlemler
           </CardTitle>
-          <CardDescription>{transactions.length} işlem</CardDescription>
+          <CardDescription>{visibleTransactions.length} işlem</CardDescription>
         </CardHeader>
         <CardContent className="px-0">
           <div className="grid grid-cols-[110px_1fr_120px_110px_90px_110px_70px] gap-3 border-b border-border/40 px-5 pb-2 font-mono text-[9.5px] uppercase tracking-[0.16em] text-muted-foreground">
@@ -264,12 +274,12 @@ export function FinancePage() {
             <span className="text-right">·</span>
           </div>
           <div className="px-5">
-            {transactions.length === 0 ? (
+            {visibleTransactions.length === 0 ? (
               <p className="py-8 text-center text-sm text-muted-foreground">
                 Henüz işlem yok. Yeni işlem ekle.
               </p>
             ) : (
-              transactions.map((t) => (
+              visibleTransactions.map((t) => (
                 <div
                   key={t.id}
                   className="grid grid-cols-[110px_1fr_120px_110px_90px_110px_70px] items-center gap-3 border-b border-border/30 py-2.5 text-sm last:border-b-0"

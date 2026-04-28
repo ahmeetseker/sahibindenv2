@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import type { ListingsDeepLink } from "@/components/ui/module-summary/types";
 import {
   ArrowRight,
   Filter,
@@ -55,7 +56,11 @@ const emptyForm: ListingFormState = {
   tag: "",
 };
 
-export function ListingsPage() {
+interface ListingsPageProps {
+  initial?: ListingsDeepLink | null;
+}
+
+export function ListingsPage({ initial }: ListingsPageProps = {}) {
   const {
     listings,
     addListing,
@@ -63,9 +68,11 @@ export function ListingsPage() {
     deleteListing,
   } = useStore();
 
-  const [filter, setFilter] = useState<"Tümü" | ListingStatus>("Tümü");
+  const [filter, setFilter] = useState<"Tümü" | ListingStatus>(
+    (initial?.filter as "Tümü" | ListingStatus | undefined) ?? "Tümü",
+  );
   const [query, setQuery] = useState("");
-  const [view, setView] = useState<"table" | "map">("table");
+  const [view, setView] = useState<"table" | "map">(initial?.view ?? "table");
   const [editing, setEditing] = useState<Listing | null>(null);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<ListingFormState>(emptyForm);
@@ -73,7 +80,7 @@ export function ListingsPage() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return listings.filter((l) => {
+    let result = listings.filter((l) => {
       if (filter !== "Tümü" && l.status !== filter) return false;
       if (q) {
         const hay = `${l.id} ${l.loc} ${l.tag ?? ""}`.toLowerCase();
@@ -81,7 +88,15 @@ export function ListingsPage() {
       }
       return true;
     });
-  }, [listings, filter, query]);
+    if (initial?.sort === "views") {
+      result = [...result].sort((a, b) => b.views - a.views);
+    }
+    if (initial?.tag) {
+      const tag = initial.tag.toLowerCase();
+      result = result.filter((l) => (l.tag ?? "").toLowerCase().includes(tag));
+    }
+    return result;
+  }, [listings, filter, query, initial?.sort, initial?.tag]);
 
   const counts = useMemo(() => {
     const all = listings.length;

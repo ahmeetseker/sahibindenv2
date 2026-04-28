@@ -3,11 +3,12 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { X, ArrowLeft } from 'lucide-react';
 import { AssistantModulesScreen } from './assistant-modules-screen';
 import { AssistantChatScreen } from './assistant-chat-screen';
+import type { SummaryEntryId } from '@/components/ui/module-summary/types';
 
 interface Props {
   open: boolean;
   onClose: () => void;
-  onPickModule: (target: string) => void;
+  onPickModule: (entryId: SummaryEntryId) => void;
 }
 
 export function AssistantModal({ open, onClose, onPickModule }: Props) {
@@ -131,7 +132,7 @@ export function AssistantModal({ open, onClose, onPickModule }: Props) {
                 <AssistantChatScreen
                   initialDraft={draft}
                   onNavigate={(target) => {
-                    onPickModule(target);
+                    onPickModule(target as SummaryEntryId);
                     onClose();
                   }}
                 />

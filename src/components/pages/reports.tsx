@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import type { ReportsDeepLink } from "@/components/ui/module-summary/types";
 import { Download, FileBarChart, Sparkles } from "lucide-react";
 import {
   Card,
@@ -23,9 +24,13 @@ const reportLibrary = [
 const tabs = ["Performans", "Satış", "Müşteri", "Bölge"] as const;
 type Tab = (typeof tabs)[number];
 
-export function ReportsPage() {
+interface ReportsPageProps {
+  initial?: ReportsDeepLink | null;
+}
+
+export function ReportsPage({ initial }: ReportsPageProps = {}) {
   const { listings, customers, transactions } = useStore();
-  const [tab, setTab] = useState<Tab>("Performans");
+  const [tab, setTab] = useState<Tab>(initial?.tab ?? "Performans");
 
   const monthlyRevenue = [
     { month: "Kas", value: 1_800_000 },
