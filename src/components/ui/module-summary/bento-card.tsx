@@ -119,7 +119,9 @@ function DistributionBody({ data }: { data: DistributionCardData }) {
         >
           <span className="text-foreground/90">{r.label}</span>
           <span className="flex items-baseline gap-2 tabular-nums">
-            <span className="text-muted-foreground">{r.value}</span>
+            <span className="text-muted-foreground">
+              {r.value.toLocaleString("tr-TR")}
+            </span>
             <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
               {r.percent}%
             </span>
