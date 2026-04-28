@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import type { CustomersDeepLink } from "@/components/ui/module-summary/types";
 import {
   ArrowRight,
   Pencil,
@@ -61,7 +62,11 @@ const emptyForm: CustomerFormState = {
   segment: "Ilık",
 };
 
-export function CustomersPage() {
+interface CustomersPageProps {
+  initial?: CustomersDeepLink | null;
+}
+
+export function CustomersPage({ initial }: CustomersPageProps) {
   const {
     customers,
     listings,
@@ -70,8 +75,10 @@ export function CustomersPage() {
     deleteCustomer,
   } = useStore();
 
-  const [filter, setFilter] = useState<"Tümü" | CustomerSegment>("Tümü");
-  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<"Tümü" | CustomerSegment>(
+    initial?.filter ?? "Tümü"
+  );
+  const [query, setQuery] = useState(initial?.stage ?? "");
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<Customer | null>(null);
   const [form, setForm] = useState<CustomerFormState>(emptyForm);
