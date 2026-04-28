@@ -109,13 +109,26 @@ type DeepLink =
 
 ### 1.5 Deep-link consume mekanizması
 
-İlgili page komponentleri opsiyonel `initial?: DeepLink` prop kabul eder. İlk `useState` çağrılarında bu prop'u default olarak kullanır (mount sonrası prop değişikliği ignore edilir; her summary açılışında `key` değişimi yeniden mount tetiklemez — `pageDeepLink` consume edildikten sonra `useEffect` ile `setPageDeepLink(null)` çağrılır).
+İlgili page komponentleri opsiyonel `initial?: DeepLink` prop kabul eder. İlk `useState` çağrılarında bu prop'u default olarak kullanır.
 
 ```ts
 // listings.tsx içinde örnek
 const [view, setView] = useState<'table'|'map'>(initial?.view ?? 'table');
 const [filter, setFilter] = useState<'Tümü'|ListingStatus>(initial?.filter ?? 'Tümü');
 ```
+
+**Re-mount stratejisi:** Aynı modüle tekrar deep-link ile dönüldüğünde (örn. listings summary'den iki farklı karta art arda gitme) `activeDock` aynı kaldığı için page yeniden mount olmaz, dolayısıyla `useState` initial'ı yeniden okunmaz. Bunu önlemek için render branch'inde page komponentine `key={pageDeepLink ? JSON.stringify(pageDeepLink) : 'default'}` verilir; deep-link her değiştiğinde page yeniden mount olur.
+
+```tsx
+{activeDock === 'listings' && (
+  <ListingsPage
+    key={pageDeepLink ? JSON.stringify(pageDeepLink) : 'listings-default'}
+    initial={pageDeepLink as ListingsDeepLink | null}
+  />
+)}
+```
+
+`pageDeepLink` consume edildikten sonra (page mount'unun bir sonraki tick'inde) `useEffect` ile `setPageDeepLink(null)` çağrılır — böylece bir sonraki "Hub'dan aynı modülü doğrudan aç" akışında stale değer kalmaz.
 
 ---
 
@@ -185,7 +198,7 @@ Tüm modüllerde aynı 4-slot template (tutarlılık + viewport-fit garanti):
 ### 2.5 Header (PageShell adapte)
 
 - Sol: `<h1 class="font-serif text-5xl font-light">` + alt mono meta.
-- Sağ: "ESC GERİ DÖN" pill (resimdeki gibi, primary) + küçük "Sayfaya git →" pill (secondary, daha az görsel ağırlık).
+- Sağ: yatay sırayla `[Sayfaya git →]  [ESC GERİ DÖN]` — sol pill secondary stil (`border-border/40 bg-background/30`, mono uppercase, daha az görsel ağırlık), sağ pill primary stil (resimdeki gibi `border-border/70 bg-background/40`). Aralarında `gap-2`.
 - Header altı: `border-b border-border/40` separator.
 
 ---
