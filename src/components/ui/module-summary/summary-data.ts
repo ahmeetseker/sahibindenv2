@@ -7,6 +7,7 @@ const MONTHS_TR = [
   "TEM", "AĞU", "EYL", "EKİ", "KAS", "ARA",
 ];
 
+// Transitional mock: stable but data-unaware. Seed-equal collections produce identical output.
 function deterministicSeries(seed: number, len = 12, min = 4, max = 20): number[] {
   const out: number[] = [];
   let x = seed;
@@ -17,6 +18,17 @@ function deterministicSeries(seed: number, len = 12, min = 4, max = 20): number[
   }
   return out;
 }
+
+// TODO: derive from real payment data once transaction.paymentMethod is available
+const FINANCE_PAYMENT_DISTRIBUTION: DistributionCardData = {
+  type: "distribution",
+  rows: [
+    { label: "Havale / EFT", value: 142, percent: 71 },
+    { label: "Nakit", value: 34, percent: 17 },
+    { label: "Kredi", value: 19, percent: 10 },
+    { label: "Takas", value: 4, percent: 2 },
+  ],
+};
 
 export function useListingsSummaryData() {
   const { listings } = useStore();
@@ -44,17 +56,17 @@ export function useListingsSummaryData() {
         const total = listings.length || 1;
         const groups = ["İmarlı", "Villa imarlı", "Tarla", "Zeytinlik"];
         // Basit: tag içerik kontrolüyle gruplama; bulunmayanlara fallback dağılım
-        const counts = groups.map((g) => {
+        const tagCounts = groups.map((g) => {
           const count = listings.filter((l) =>
             (l.tag ?? "").toLowerCase().includes(g.toLowerCase()),
           ).length;
           return count > 0 ? count : Math.max(1, Math.round(total / groups.length));
         });
-        const sum = counts.reduce((a, b) => a + b, 0);
+        const sum = tagCounts.reduce((a, b) => a + b, 0);
         return groups.map((label, i) => ({
           label,
-          value: counts[i],
-          percent: Math.round((counts[i] / sum) * 100),
+          value: tagCounts[i],
+          percent: Math.round((tagCounts[i] / sum) * 100),
         }));
       })(),
     };
@@ -125,15 +137,7 @@ export function useFinanceSummaryData() {
       data: MONTHS_TR.map((m, i) => ({ label: m, value: series[i] })),
       unit: "₺M",
     };
-    const distribution: DistributionCardData = {
-      type: "distribution",
-      rows: [
-        { label: "Havale / EFT", value: 142, percent: 71 },
-        { label: "Nakit", value: 34, percent: 17 },
-        { label: "Kredi", value: 19, percent: 10 },
-        { label: "Takas", value: 4, percent: 2 },
-      ],
-    };
+    const distribution = FINANCE_PAYMENT_DISTRIBUTION;
     const pendingList: ListCardData = {
       type: "list",
       items: pending.slice(0, 3).map((t) => ({
