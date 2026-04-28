@@ -132,17 +132,80 @@ function DistributionBody({ data }: { data: DistributionCardData }) {
   );
 }
 
-function ChartBody({ data: _data }: { data: ChartCardData }) {
-  return null; // sonraki task'ta uygulanır
+function ChartBody({ data }: { data: ChartCardData }) {
+  if (data.data.length === 0) {
+    return (
+      <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
+        —
+      </div>
+    );
+  }
+  return (
+    <div className="flex h-full min-h-[120px] flex-1 items-end">
+      <MiniChart label="" data={data.data} unit={data.unit} pulseDot={false} />
+    </div>
+  );
 }
 
-function ListBody({ data: _data }: { data: ListCardData }) {
-  return null; // sonraki task'ta uygulanır
+function ListBody({ data }: { data: ListCardData }) {
+  if (data.items.length === 0) {
+    return (
+      <p className="text-xs text-muted-foreground">—</p>
+    );
+  }
+  return (
+    <ul className="divide-y divide-border/30">
+      {data.items.map((item, i) => (
+        <li
+          key={`${item.title}-${i}`}
+          className="flex items-center justify-between gap-3 py-1.5 text-sm"
+        >
+          <span className="flex min-w-0 items-center gap-2">
+            {item.leading && (
+              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                {item.leading}
+              </span>
+            )}
+            <span className="truncate">{item.title}</span>
+          </span>
+          {item.trailing && !item.pill && (
+            <span className="font-mono text-[10px] uppercase tracking-[0.14em] tabular-nums text-muted-foreground">
+              {item.trailing}
+            </span>
+          )}
+          {item.pill && (
+            <span
+              className={cn(
+                "rounded-full border px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.14em]",
+                item.pill.tone === "success"
+                  ? "border-emerald-700/30 bg-emerald-700/10 text-emerald-700 dark:text-emerald-300"
+                  : item.pill.tone === "warning"
+                  ? "border-amber-700/30 bg-amber-700/10 text-amber-700 dark:text-amber-300"
+                  : "border-border/60 bg-background/40 text-muted-foreground",
+              )}
+            >
+              {item.pill.text}
+            </span>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
 }
 
-function ShortcutBody({ data: _data }: { data: ShortcutCardData }) {
-  return null; // sonraki task'ta uygulanır
+function ShortcutBody({ data }: { data: ShortcutCardData }) {
+  const Icon = data.icon;
+  return (
+    <div className="flex flex-1 flex-col justify-end gap-3">
+      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-stone-700/10 text-stone-800 dark:bg-stone-200/10 dark:text-stone-200">
+        <Icon className="h-5 w-5" />
+      </div>
+      <div>
+        <p className="text-sm font-medium leading-snug">{data.primary}</p>
+        {data.secondary && (
+          <p className="mt-0.5 text-xs text-muted-foreground">{data.secondary}</p>
+        )}
+      </div>
+    </div>
+  );
 }
-
-// Tip referanslarını tutmak için (no-unused import warning'i önler):
-void MiniChart;
