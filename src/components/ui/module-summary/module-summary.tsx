@@ -80,7 +80,7 @@ export function ModuleSummary({
         exit={{ opacity: 0 }}
         transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
         className={cn(
-          "absolute inset-0 z-20 flex flex-col gap-6 px-8 py-8 sm:px-12 sm:py-10",
+          "fixed inset-0 z-30 flex flex-col gap-6 overflow-hidden bg-background px-8 py-8 sm:px-12 sm:py-10",
         )}
       >
         <header className="flex items-end justify-between gap-6 border-b border-border/40 pb-5">
