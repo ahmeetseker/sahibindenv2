@@ -741,7 +741,12 @@ const InfiniteGrid = ({
           </>
         )}
         {pageReady[activeDock] && (
-          <>
+          <motion.div
+            key={activeDock}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+          >
             {activeDock === 'overview' && <DashboardHome onNavigate={setActiveDock} />}
             {activeDock === 'listings' && <ListingsPage />}
             {activeDock === 'customers' && <CustomersPage />}
@@ -751,7 +756,7 @@ const InfiniteGrid = ({
             {activeDock === 'messages' && <MessagesPage />}
             {activeDock === 'search' && <SearchPage />}
             {activeDock === 'profile' && <ProfilePage />}
-          </>
+          </motion.div>
         )}
       </div>
     </div>
