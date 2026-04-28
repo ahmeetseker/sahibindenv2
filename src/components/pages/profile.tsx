@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { useStore } from "@/lib/store";
 import { PageShell } from "./page-shell";
+import type { ProfileDeepLink } from "@/components/ui/module-summary/types";
 
 import {
   PROFILE_SHORTCUT_IDS,
@@ -57,12 +58,21 @@ const sessions = [
   { device: "iPad · Safari", loc: "İstanbul · 88.224.x", time: "3 gün önce" },
 ];
 
-export function ProfilePage() {
+interface ProfilePageProps {
+  initial?: ProfileDeepLink | null;
+}
+
+export function ProfilePage({ initial }: ProfilePageProps = {}) {
   const { profile, updateProfile, resetStore } = useStore();
   const [editing, setEditing] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const [form, setForm] = useState(profile);
-  const [openShortcut, setOpenShortcut] = useState<ProfileShortcutId | null>(null);
+  const initialShortcutId = initial?.shortcut
+    ? PROFILE_SHORTCUT_IDS[initial.shortcut]
+    : null;
+  const [openShortcut, setOpenShortcut] = useState<ProfileShortcutId | null>(
+    initialShortcutId,
+  );
 
   useEffect(() => {
     const handler = (e: Event) => {
