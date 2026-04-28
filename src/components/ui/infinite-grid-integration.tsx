@@ -50,6 +50,17 @@ import { MessagesSkeleton } from '@/components/pages/skeletons/messages-skeleton
 import { SearchSkeleton } from '@/components/pages/skeletons/search-skeleton';
 import { ProfileSkeleton } from '@/components/pages/skeletons/profile-skeleton';
 import { AssistantModal } from '@/components/ui/assistant/assistant-modal';
+import { ModuleSummary } from '@/components/ui/module-summary/module-summary';
+import { SUMMARY_ENTRIES } from '@/components/ui/module-summary/summary-config';
+import type {
+  DeepLink,
+  SummaryEntryId,
+  ListingsDeepLink,
+  CustomersDeepLink,
+  FinanceDeepLink,
+  ReportsDeepLink,
+  ProfileDeepLink,
+} from '@/components/ui/module-summary/types';
 import { useStore } from '@/lib/store';
 import {
   PROFILE_SHORTCUT_IDS,
@@ -110,11 +121,19 @@ const InfiniteGrid = ({
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [now, setNow] = useState<Date>(() => new Date());
   const [activeDock, setActiveDock] = useState<string>('overview');
+  const [activeSummary, setActiveSummary] = useState<SummaryEntryId | null>(null);
+  const [pageDeepLink, setPageDeepLink] = useState<DeepLink | null>(null);
   const [mobileDockOpen, setMobileDockOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const [pageReady, setPageReady] = useState<Record<string, boolean>>({
     overview: true,
   });
+
+  useEffect(() => {
+    if (pageDeepLink === null) return;
+    const t = setTimeout(() => setPageDeepLink(null), 0);
+    return () => clearTimeout(t);
+  }, [pageDeepLink]);
 
   useEffect(() => {
     if (pageReady[activeDock]) return;
@@ -688,8 +707,29 @@ const InfiniteGrid = ({
       <AssistantModal
         open={assistantOpen}
         onClose={() => setAssistantOpen(false)}
-        onPickModule={(target) => setActiveDock(target)}
+        onPickModule={(entryId) => setActiveSummary(entryId)}
       />
+
+      {activeSummary && (
+        <ModuleSummary
+          entryId={activeSummary}
+          onCardClick={(deepLink) => {
+            const entry = SUMMARY_ENTRIES[activeSummary];
+            setActiveSummary(null);
+            setPageDeepLink(deepLink);
+            setActiveDock(entry.target);
+          }}
+          onPrimary={() => {
+            const entry = SUMMARY_ENTRIES[activeSummary];
+            setActiveSummary(null);
+            setActiveDock(entry.target);
+          }}
+          onClose={() => {
+            setActiveSummary(null);
+            setAssistantOpen(true);
+          }}
+        />
+      )}
 
       <Dialog
         open={signoutOpen}
@@ -748,14 +788,39 @@ const InfiniteGrid = ({
             transition={{ duration: 0.15, ease: 'easeOut' }}
           >
             {activeDock === 'overview' && <DashboardHome onNavigate={setActiveDock} />}
-            {activeDock === 'listings' && <ListingsPage />}
-            {activeDock === 'customers' && <CustomersPage />}
-            {activeDock === 'finance' && <FinancePage />}
-            {activeDock === 'reports' && <ReportsPage />}
+            {activeDock === 'listings' && (
+              <ListingsPage
+                key={pageDeepLink ? `listings-${JSON.stringify(pageDeepLink)}` : 'listings-default'}
+                initial={pageDeepLink as ListingsDeepLink | null}
+              />
+            )}
+            {activeDock === 'customers' && (
+              <CustomersPage
+                key={pageDeepLink ? `customers-${JSON.stringify(pageDeepLink)}` : 'customers-default'}
+                initial={pageDeepLink as CustomersDeepLink | null}
+              />
+            )}
+            {activeDock === 'finance' && (
+              <FinancePage
+                key={pageDeepLink ? `finance-${JSON.stringify(pageDeepLink)}` : 'finance-default'}
+                initial={pageDeepLink as FinanceDeepLink | null}
+              />
+            )}
+            {activeDock === 'reports' && (
+              <ReportsPage
+                key={pageDeepLink ? `reports-${JSON.stringify(pageDeepLink)}` : 'reports-default'}
+                initial={pageDeepLink as ReportsDeepLink | null}
+              />
+            )}
             {activeDock === 'calendar' && <CalendarPage />}
             {activeDock === 'messages' && <MessagesPage />}
             {activeDock === 'search' && <SearchPage />}
-            {activeDock === 'profile' && <ProfilePage />}
+            {activeDock === 'profile' && (
+              <ProfilePage
+                key={pageDeepLink ? `profile-${JSON.stringify(pageDeepLink)}` : 'profile-default'}
+                initial={pageDeepLink as ProfileDeepLink | null}
+              />
+            )}
           </motion.div>
         )}
       </div>
