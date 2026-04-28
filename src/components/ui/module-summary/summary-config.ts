@@ -1,4 +1,4 @@
-import { Layers, Lock, Settings as SettingsIcon } from "lucide-react";
+import { Layers, Lock } from "lucide-react";
 import type { SummaryEntries, SummaryEntry } from "./types";
 
 const listings: SummaryEntry = {
@@ -110,14 +110,229 @@ const categories: SummaryEntry = {
   ],
 };
 
-// İleride eklenecek: customers, finance, reports, profile
+const customers: SummaryEntry = {
+  id: "customers",
+  target: "customers",
+  header: {
+    title: { lead: "Müşteri", accent: "defteri" },
+    meta: "KAYITLI MÜŞTERİ · CRM ENTEGRE",
+  },
+  cards: [
+    {
+      slot: "hero",
+      title: { lead: "Yeni kayıt", accent: "akışı" },
+      meta: "AYLIK · SON 12 AY",
+      deepLink: { filter: "Tümü" },
+      data: { type: "chart", data: [] },
+    },
+    {
+      slot: "kpi-tall",
+      title: { lead: "Kayıtlı", accent: "müşteri" },
+      meta: "TOPLAM",
+      deepLink: { filter: "Tümü" },
+      data: {
+        type: "kpi",
+        bigValue: "0",
+        delta: { tone: "positive", text: "▲ 184 SON 30 GÜN" },
+      },
+    },
+    {
+      slot: "mini-a",
+      title: { lead: "Aktif", accent: "görüşmeler" },
+      meta: "AŞAMAYA GÖRE",
+      deepLink: { stage: "İlk temas" },
+      data: { type: "distribution", rows: [] },
+    },
+    {
+      slot: "mini-b",
+      title: { lead: "Sıcak", accent: "müşteriler" },
+      meta: "EN YAKIN 3",
+      deepLink: { filter: "Sıcak" },
+      data: { type: "list", items: [] },
+    },
+  ],
+};
+
+const finance: SummaryEntry = {
+  id: "finance",
+  target: "finance",
+  header: {
+    title: { lead: "Finans &", accent: "Ciro" },
+    meta: "SON 12 AY · OTOMATİK SENKRON",
+  },
+  cards: [
+    {
+      slot: "hero",
+      title: { lead: "Yıllık", accent: "ciro" },
+      meta: "₺ MİLYON · KDV HARİÇ",
+      deepLink: {},
+      data: { type: "chart", data: [], unit: "₺M" },
+    },
+    {
+      slot: "kpi-tall",
+      title: { lead: "Portföy", accent: "değeri" },
+      meta: "GÜNCEL",
+      deepLink: {},
+      data: {
+        type: "kpi",
+        bigValue: "₺24.8M",
+        delta: { tone: "positive", text: "▲ 12.4% GEÇEN YILA GÖRE" },
+      },
+    },
+    {
+      slot: "mini-a",
+      title: { lead: "Ödeme", accent: "yöntemi" },
+      meta: "12 AY KÜMÜLATİF",
+      deepLink: {},
+      data: { type: "distribution", rows: [] },
+    },
+    {
+      slot: "mini-b",
+      title: { lead: "Bekleyen", accent: "ödemeler" },
+      meta: "TAPU SÜRECİNDE",
+      deepLink: { status: "Kaparo" },
+      data: { type: "list", items: [] },
+    },
+  ],
+};
+
+const reports: SummaryEntry = {
+  id: "reports",
+  target: "reports",
+  header: {
+    title: { lead: "Rapor", accent: "atölyesi" },
+    meta: "24 OTOMATİK RAPOR · 5 BUGÜN",
+  },
+  cards: [
+    {
+      slot: "hero",
+      title: { lead: "Son üretilen", accent: "raporlar" },
+      meta: "OTOMATİK · 7 GÜN",
+      deepLink: { tab: "Performans" },
+      data: {
+        type: "list",
+        items: [
+          { leading: "14:00", title: "Haftalık satış özeti · Çeyrek 2", pill: { text: "PDF", tone: "neutral" } },
+          { leading: "12:30", title: "Bölge karşılaştırma · Nisan", pill: { text: "XLSX", tone: "neutral" } },
+          { leading: "09:15", title: "Müşteri kohortu · Q1 2026", pill: { text: "PDF", tone: "neutral" } },
+          { leading: "08:00", title: "Günlük özet · Tuna'ya", pill: { text: "E-POSTA", tone: "success" } },
+        ],
+      },
+    },
+    {
+      slot: "kpi-tall",
+      title: { lead: "Üretilen", accent: "rapor" },
+      meta: "TOPLAM · 30 GÜN",
+      deepLink: { tab: "Performans" },
+      data: {
+        type: "kpi",
+        bigValue: "142",
+        delta: { tone: "positive", text: "▲ 24 YENİ BU HAFTA" },
+      },
+    },
+    {
+      slot: "mini-a",
+      title: { lead: "Aktif", accent: "zamanlayıcı" },
+      meta: "OTOMASYON",
+      deepLink: { tab: "Satış" },
+      data: {
+        type: "list",
+        items: [
+          { leading: "08:00", title: "Günlük", trailing: "özet" },
+          { leading: "Cmt-Paz", title: "Hafta sonu", trailing: "PDF" },
+          { leading: "Aylık", title: "1.'i", trailing: "finans" },
+        ],
+      },
+    },
+    {
+      slot: "mini-b",
+      title: { lead: "Rapor", accent: "tipleri" },
+      meta: "DAĞILIM",
+      deepLink: { tab: "Müşteri" },
+      data: {
+        type: "distribution",
+        rows: [
+          { label: "Performans", value: 56, percent: 39 },
+          { label: "Satış", value: 38, percent: 27 },
+          { label: "Müşteri", value: 28, percent: 20 },
+          { label: "Bölge", value: 20, percent: 14 },
+        ],
+      },
+    },
+  ],
+};
+
+const profile: SummaryEntry = {
+  id: "profile",
+  target: "profile",
+  header: {
+    title: { lead: "Atölye", accent: "ayarları" },
+    meta: "9 ENTEGRASYON · TÜMÜ SAĞLIKLI",
+  },
+  cards: [
+    {
+      slot: "hero",
+      title: { lead: "Bağlı", accent: "servisler" },
+      meta: "ENTEGRASYONLAR",
+      deepLink: { shortcut: "integration" },
+      data: {
+        type: "list",
+        items: [
+          { title: "Tapu Kadastro API", pill: { text: "canlı", tone: "success" } },
+          { title: "Sahibinden.com", pill: { text: "canlı", tone: "success" } },
+          { title: "Hepsiemlak", pill: { text: "canlı", tone: "success" } },
+          { title: "E-Devlet bağlantısı", pill: { text: "canlı", tone: "success" } },
+          { title: "WhatsApp Business", pill: { text: "canlı", tone: "success" } },
+        ],
+      },
+    },
+    {
+      slot: "kpi-tall",
+      title: { lead: "Aktif", accent: "kural" },
+      meta: "OTOMASYON",
+      deepLink: { shortcut: "general" },
+      data: {
+        type: "kpi",
+        bigValue: "14",
+        delta: { tone: "positive", text: "▲ 3 YENİ BU AY" },
+      },
+    },
+    {
+      slot: "mini-a",
+      title: { lead: "Aktif", accent: "kullanıcı" },
+      meta: "EKİP",
+      deepLink: { shortcut: "team" },
+      data: {
+        type: "distribution",
+        rows: [
+          { label: "Yönetici", value: 2, percent: 20 },
+          { label: "Emlakçı", value: 5, percent: 50 },
+          { label: "Destek", value: 3, percent: 30 },
+        ],
+      },
+    },
+    {
+      slot: "mini-b",
+      title: { lead: "Güvenlik &", accent: "oturumlar" },
+      meta: "SON 7 GÜN",
+      deepLink: { shortcut: "security" },
+      data: {
+        type: "shortcut",
+        icon: Lock,
+        primary: "3 cihaz aktif",
+        secondary: "Bu cihaz · Chrome / macOS",
+      },
+    },
+  ],
+};
+
 export const SUMMARY_ENTRIES: SummaryEntries = {
   listings,
   categories,
-  customers: undefined as unknown as SummaryEntry,
-  finance: undefined as unknown as SummaryEntry,
-  reports: undefined as unknown as SummaryEntry,
-  profile: undefined as unknown as SummaryEntry,
+  customers,
+  finance,
+  reports,
+  profile,
 };
 
 // Yardımcı: ileride kart override'ı için (runtime data injection)
@@ -125,6 +340,7 @@ export function withRuntimeData<T extends SummaryEntry>(
   entry: T,
   overrides: Partial<Record<T["cards"][number]["slot"], Partial<T["cards"][number]["data"]>>>,
 ): T {
+  // TS cannot narrow T["cards"][number]["slot"] as an index key under the generic constraint; widen to string locally only.
   const _overrides = overrides as Partial<Record<string, Partial<T["cards"][number]["data"]>>>;
   return {
     ...entry,
@@ -136,5 +352,3 @@ export function withRuntimeData<T extends SummaryEntry>(
   } as T;
 }
 
-// Lock & SettingsIcon importları profile entry'si eklendiğinde kullanılacak
-void Lock; void SettingsIcon;
