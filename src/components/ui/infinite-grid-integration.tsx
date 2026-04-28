@@ -40,6 +40,15 @@ import { CalendarPage } from '@/components/pages/calendar';
 import { MessagesPage } from '@/components/pages/messages';
 import { SearchPage } from '@/components/pages/search';
 import { ProfilePage } from '@/components/pages/profile';
+import { DashboardHomeSkeleton } from '@/components/pages/skeletons/dashboard-home-skeleton';
+import { ListingsSkeleton } from '@/components/pages/skeletons/listings-skeleton';
+import { CustomersSkeleton } from '@/components/pages/skeletons/customers-skeleton';
+import { FinanceSkeleton } from '@/components/pages/skeletons/finance-skeleton';
+import { ReportsSkeleton } from '@/components/pages/skeletons/reports-skeleton';
+import { CalendarSkeleton } from '@/components/pages/skeletons/calendar-skeleton';
+import { MessagesSkeleton } from '@/components/pages/skeletons/messages-skeleton';
+import { SearchSkeleton } from '@/components/pages/skeletons/search-skeleton';
+import { ProfileSkeleton } from '@/components/pages/skeletons/profile-skeleton';
 import { AssistantModal } from '@/components/ui/assistant/assistant-modal';
 import { useStore } from '@/lib/store';
 import {
@@ -103,6 +112,24 @@ const InfiniteGrid = ({
   const [activeDock, setActiveDock] = useState<string>('overview');
   const [mobileDockOpen, setMobileDockOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
+  const [pageReady, setPageReady] = useState<Record<string, boolean>>({
+    overview: true,
+  });
+
+  useEffect(() => {
+    if (pageReady[activeDock]) return;
+    let id2 = 0;
+    const id1 = requestAnimationFrame(() => {
+      id2 = requestAnimationFrame(() => {
+        setPageReady((p) => ({ ...p, [activeDock]: true }));
+      });
+    });
+    return () => {
+      cancelAnimationFrame(id1);
+      cancelAnimationFrame(id2);
+    };
+  }, [activeDock, pageReady]);
+
   const { conversations, resetStore } = useStore();
   const unreadCount = conversations.filter((c) => c.unread).length;
   const containerRef = useRef<HTMLDivElement>(null);
@@ -700,15 +727,32 @@ const InfiniteGrid = ({
       </Dialog>
 
       <div className="absolute inset-0 z-10 overflow-y-auto overflow-x-hidden">
-        {activeDock === 'overview' && <DashboardHome onNavigate={setActiveDock} />}
-        {activeDock === 'listings' && <ListingsPage />}
-        {activeDock === 'customers' && <CustomersPage />}
-        {activeDock === 'finance' && <FinancePage />}
-        {activeDock === 'reports' && <ReportsPage />}
-        {activeDock === 'calendar' && <CalendarPage />}
-        {activeDock === 'messages' && <MessagesPage />}
-        {activeDock === 'search' && <SearchPage />}
-        {activeDock === 'profile' && <ProfilePage />}
+        {!pageReady[activeDock] && (
+          <>
+            {activeDock === 'overview' && <DashboardHomeSkeleton />}
+            {activeDock === 'listings' && <ListingsSkeleton />}
+            {activeDock === 'customers' && <CustomersSkeleton />}
+            {activeDock === 'finance' && <FinanceSkeleton />}
+            {activeDock === 'reports' && <ReportsSkeleton />}
+            {activeDock === 'calendar' && <CalendarSkeleton />}
+            {activeDock === 'messages' && <MessagesSkeleton />}
+            {activeDock === 'search' && <SearchSkeleton />}
+            {activeDock === 'profile' && <ProfileSkeleton />}
+          </>
+        )}
+        {pageReady[activeDock] && (
+          <>
+            {activeDock === 'overview' && <DashboardHome onNavigate={setActiveDock} />}
+            {activeDock === 'listings' && <ListingsPage />}
+            {activeDock === 'customers' && <CustomersPage />}
+            {activeDock === 'finance' && <FinancePage />}
+            {activeDock === 'reports' && <ReportsPage />}
+            {activeDock === 'calendar' && <CalendarPage />}
+            {activeDock === 'messages' && <MessagesPage />}
+            {activeDock === 'search' && <SearchPage />}
+            {activeDock === 'profile' && <ProfilePage />}
+          </>
+        )}
       </div>
     </div>
   );
