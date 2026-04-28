@@ -1,19 +1,20 @@
 import { ArrowRight, Sparkles } from 'lucide-react';
+import type { SummaryEntryId } from '@/components/ui/module-summary/types';
 
-const MODULES = [
-  { title: 'İlanlar', desc: 'Arsa portföyü, yeni ilan ekleme, düzenleme ve pasife alma.', cta: 'İlanları aç', target: 'listings' },
-  { title: 'Kategoriler', desc: 'Arsa tipleri, bölgeler, etiketler ve özel filtre setleri.', cta: 'Kategorileri aç', target: 'listings' },
-  { title: 'Müşteriler', desc: 'CRM defteri, görüşmeler, kohort analizi ve iletişim geçmişi.', cta: 'CRM defterine git', target: 'customers' },
-  { title: 'Finans', desc: 'Satışlar, tahsilat, komisyon, tapu masrafları ve bekleyen ödemeler.', cta: 'Finansı aç', target: 'finance' },
-  { title: 'Raporlar', desc: 'Otomatik analiz, haftalık özet, performans ve dışa aktarım.', cta: 'Raporları aç', target: 'reports' },
-  { title: 'Ayarlar', desc: 'Ekip, yetkilendirme, entegrasyonlar ve otomasyon kuralları.', cta: 'Ayarları aç', target: 'profile' },
-] as const;
+const MODULES: Array<{ title: string; desc: string; cta: string; entryId: SummaryEntryId }> = [
+  { title: 'İlanlar', desc: 'Arsa portföyü, yeni ilan ekleme, düzenleme ve pasife alma.', cta: 'İlanları aç', entryId: 'listings' },
+  { title: 'Kategoriler', desc: 'Arsa tipleri, bölgeler, etiketler ve özel filtre setleri.', cta: 'Kategorileri aç', entryId: 'categories' },
+  { title: 'Müşteriler', desc: 'CRM defteri, görüşmeler, kohort analizi ve iletişim geçmişi.', cta: 'CRM defterine git', entryId: 'customers' },
+  { title: 'Finans', desc: 'Satışlar, tahsilat, komisyon, tapu masrafları ve bekleyen ödemeler.', cta: 'Finansı aç', entryId: 'finance' },
+  { title: 'Raporlar', desc: 'Otomatik analiz, haftalık özet, performans ve dışa aktarım.', cta: 'Raporları aç', entryId: 'reports' },
+  { title: 'Ayarlar', desc: 'Ekip, yetkilendirme, entegrasyonlar ve otomasyon kuralları.', cta: 'Ayarları aç', entryId: 'profile' },
+];
 
 interface Props {
   draft: string;
   onDraftChange: (v: string) => void;
   onActivateChat: () => void;
-  onPickModule: (target: string) => void;
+  onPickModule: (entryId: SummaryEntryId) => void;
 }
 
 export function AssistantModulesScreen({ draft, onDraftChange, onActivateChat, onPickModule }: Props) {
@@ -33,7 +34,7 @@ export function AssistantModulesScreen({ draft, onDraftChange, onActivateChat, o
             <button
               type="button"
               key={m.title}
-              onClick={() => onPickModule(m.target)}
+              onClick={() => onPickModule(m.entryId)}
               className="group flex flex-col gap-3.5 rounded-xl border border-border/60 bg-background/40 p-4 text-left backdrop-blur-md transition-all hover:-translate-y-0.5 hover:border-border hover:bg-background/70"
             >
               <div className="space-y-1">
