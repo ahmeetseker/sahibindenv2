@@ -70,7 +70,9 @@ export interface AtomButtonProps {
 export function AtomButton({ onClick }: AtomButtonProps) {
   const [atomHover, setAtomHover] = useState(false);
   const atomHoverRef = useRef(false);
-  atomHoverRef.current = atomHover;
+  useEffect(() => {
+    atomHoverRef.current = atomHover;
+  }, [atomHover]);
   const [electronPositions, setElectronPositions] = useState<Vec2[]>([
     { x: 22, y: 0 },
     { x: 22, y: 0 },
