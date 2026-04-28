@@ -212,6 +212,17 @@ body {
   }
 }
 
+@keyframes islandExpIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .dock-hint {
   animation: dock-hint-breathe 2.6s ease-in-out infinite;
   transition: opacity 0.35s ease-out, transform 0.35s ease-out;

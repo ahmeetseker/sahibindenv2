@@ -74,11 +74,11 @@ export const GlassEffect: React.FC<GlassEffectProps> = ({
   );
 };
 
-const DOCK_BASE_ICON_SIZE = 48;
-const DOCK_BASE_SPACING = 8;
+const DOCK_BASE_ICON_SIZE = 38;
+const DOCK_BASE_SPACING = 6;
 const DOCK_MIN_SCALE = 1.0;
-const DOCK_MAX_SCALE = 1.6;
-const DOCK_EFFECT_WIDTH = 220;
+const DOCK_MAX_SCALE = 1.5;
+const DOCK_EFFECT_WIDTH = 180;
 
 const calcInitialDockPositions = (count: number): number[] => {
   let x = 0;
@@ -213,7 +213,7 @@ export const GlassDock: React.FC<{ icons: DockIcon[]; href?: string }> = ({
   return (
     <GlassEffect
       href={href}
-      className="rounded-3xl px-3 py-2"
+      className="rounded-full px-2 py-1.5"
       style={{ overflow: "visible" }}
     >
       <div
@@ -234,7 +234,7 @@ export const GlassDock: React.FC<{ icons: DockIcon[]; href?: string }> = ({
             <div
               role={icon.onClick ? "button" : undefined}
               aria-label={icon.alt}
-              className={`w-full h-full flex items-center justify-center rounded-2xl transition-colors ${
+              className={`w-full h-full flex items-center justify-center rounded-full transition-colors ${
                 icon.active
                   ? "bg-stone-900/15 dark:bg-stone-100/15 ring-1 ring-stone-900/20 dark:ring-stone-100/20 shadow-inner"
                   : ""
@@ -276,7 +276,7 @@ export const GlassDock: React.FC<{ icons: DockIcon[]; href?: string }> = ({
               {isHovered && (
                 <span
                   role="tooltip"
-                  className="pointer-events-none absolute left-1/2 bottom-full mb-3 -translate-x-1/2 whitespace-nowrap rounded-md border border-border/60 bg-background/90 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-foreground shadow-lg backdrop-blur-md"
+                  className="pointer-events-none absolute left-1/2 bottom-full mb-2 -translate-x-1/2 whitespace-nowrap rounded-full border border-border/60 bg-background/90 px-2.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-foreground shadow-md backdrop-blur-md"
                 >
                   {labelText}
                 </span>
@@ -296,14 +296,14 @@ export const GlassDockVertical: React.FC<{
 }> = ({ icons, onIconClick }) => {
   return (
     <GlassEffect
-      className="rounded-3xl px-2 py-3"
+      className="rounded-full px-1.5 py-2"
       style={{ overflow: "visible" }}
     >
-      <div className="flex flex-col items-center gap-2">
+      <div className="flex flex-col items-center gap-1.5">
         {icons.map((icon, index) => {
           const tile = icon.icon ? (
             <div
-              className={`flex h-full w-full items-center justify-center rounded-2xl transition-colors ${
+              className={`flex h-full w-full items-center justify-center rounded-full transition-colors ${
                 icon.active
                   ? "bg-stone-900/15 dark:bg-stone-100/15 ring-1 ring-stone-900/20 dark:ring-stone-100/20 shadow-inner"
                   : ""
@@ -329,7 +329,7 @@ export const GlassDockVertical: React.FC<{
                 icon.onClick?.();
                 onIconClick?.();
               }}
-              className="relative h-12 w-12 cursor-pointer transition-transform active:scale-95"
+              className="relative h-10 w-10 cursor-pointer transition-transform active:scale-95"
             >
               {tile}
             </button>

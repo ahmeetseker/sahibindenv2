@@ -10,11 +10,6 @@ import {
 import {
   Sun,
   Moon,
-  Settings2,
-  SlidersHorizontal,
-  Gauge,
-  Aperture,
-  X,
   Bell,
   LayoutGrid,
   Layers,
@@ -26,6 +21,12 @@ import {
   Search,
   User,
   Sparkles,
+  SlidersHorizontal,
+  X,
+  Settings2,
+  Building2,
+  ChevronRight,
+  LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GlassDock, GlassDockVertical, GlassEffect, GlassFilter, type DockIcon } from '@/components/ui/liquid-glass';
@@ -41,6 +42,95 @@ import { SearchPage } from '@/components/pages/search';
 import { ProfilePage } from '@/components/pages/profile';
 import { AssistantModal } from '@/components/ui/assistant/assistant-modal';
 import { useStore } from '@/lib/store';
+import {
+  PROFILE_SHORTCUT_IDS,
+  PROFILE_OPEN_MODAL_EVENT,
+  type ProfileShortcutId,
+} from '@/components/pages/profile-shortcuts';
+import {
+  Dialog,
+  buttonGhost,
+  buttonDanger,
+} from '@/components/ui/dialog';
+
+type Vec2 = { x: number; y: number };
+
+const midpointDisplace = (
+  pts: Vec2[],
+  depth: number,
+  jitter: number,
+): Vec2[] => {
+  if (depth <= 0) return pts;
+  const out: Vec2[] = [pts[0]];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i];
+    const b = pts[i + 1];
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const nx = -dy / len;
+    const ny = dx / len;
+    const off = (Math.random() - 0.5) * jitter;
+    out.push({ x: (a.x + b.x) / 2 + nx * off, y: (a.y + b.y) / 2 + ny * off });
+    out.push(b);
+  }
+  return midpointDisplace(out, depth - 1, jitter * 0.55);
+};
+
+const pointsToPath = (pts: Vec2[]) =>
+  pts
+    .map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(2)},${p.y.toFixed(2)}`)
+    .join(' ');
+
+const generateJaggedEllipsePath = (
+  rx: number,
+  ry: number,
+  segments: number,
+  jitter: number,
+): string => {
+  const pts: Vec2[] = [];
+  for (let i = 0; i < segments; i++) {
+    const theta = (i / segments) * 2 * Math.PI;
+    const j = 1 + (Math.random() - 0.5) * jitter;
+    pts.push({ x: rx * j * Math.cos(theta), y: ry * j * Math.sin(theta) });
+  }
+  pts.push(pts[0]);
+  return pts
+    .map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(2)},${p.y.toFixed(2)}`)
+    .join(' ');
+};
+
+const generateBoltPath = (target: Vec2): string => {
+  const totalLen = Math.hypot(target.x, target.y) || 1;
+  const main = midpointDisplace([{ x: 0, y: 0 }, target], 5, totalLen * 0.18);
+  const segments: string[] = [pointsToPath(main)];
+  for (let i = 2; i < main.length - 1; i++) {
+    if (Math.random() < 0.32) {
+      const p = main[i];
+      const prev = main[i - 1];
+      const baseAngle = Math.atan2(p.y - prev.y, p.x - prev.x);
+      const branchAngle = baseAngle + (Math.random() - 0.5) * Math.PI * 0.9;
+      const branchLen = totalLen * (0.18 + Math.random() * 0.32);
+      const end: Vec2 = {
+        x: p.x + Math.cos(branchAngle) * branchLen,
+        y: p.y + Math.sin(branchAngle) * branchLen,
+      };
+      const branch = midpointDisplace([p, end], 3, branchLen * 0.22);
+      segments.push(pointsToPath(branch));
+      if (branch.length > 4 && Math.random() < 0.35) {
+        const sp = branch[Math.floor(branch.length / 2)];
+        const subAngle = branchAngle + (Math.random() - 0.5) * Math.PI * 0.7;
+        const subLen = branchLen * (0.4 + Math.random() * 0.4);
+        const subEnd: Vec2 = {
+          x: sp.x + Math.cos(subAngle) * subLen,
+          y: sp.y + Math.sin(subAngle) * subLen,
+        };
+        segments.push(pointsToPath(midpointDisplace([sp, subEnd], 2, subLen * 0.25)));
+      }
+    }
+  }
+  return segments.join(' ');
+};
 
 const GridPattern = ({
   offsetX,
@@ -83,30 +173,116 @@ const InfiniteGrid = ({
   isDark: boolean;
   onToggleTheme: () => void;
 }) => {
-  const [gridSize, setGridSize] = useState(40);
-  const [speed, setSpeed] = useState(0.5);
-  const [revealRadius, setRevealRadius] = useState(300);
-  const [panelOpen, setPanelOpen] = useState(false);
+  const gridSize = 24;
+  const speed = 0.35;
+  const revealRadius = 240;
+  const [accountOpen, setAccountOpen] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [now, setNow] = useState<Date>(() => new Date());
   const [activeDock, setActiveDock] = useState<string>('overview');
   const [mobileDockOpen, setMobileDockOpen] = useState(false);
-  const { customers, transactions, conversations } = useStore();
-  const hotCount = customers.filter((c) => c.segment === 'Sıcak').length;
-  const pendingDocs = transactions.filter((t) => t.status === 'Kaparo' || t.status === 'Teklif').length;
-  const todayDeposits = transactions.filter((t) => t.status === 'Kaparo').length;
+  const [navOpen, setNavOpen] = useState(false);
+  const [atomHover, setAtomHover] = useState(false);
+  const atomHoverRef = useRef(false);
+  atomHoverRef.current = atomHover;
+  const [electronPositions, setElectronPositions] = useState<Vec2[]>([
+    { x: 22, y: 0 },
+    { x: 22, y: 0 },
+    { x: 22, y: 0 },
+  ]);
+  const [atomBolts, setAtomBolts] = useState<({ d: string; intensity: number } | null)[]>([
+    null,
+    null,
+    null,
+  ]);
+  const { conversations, resetStore } = useStore();
   const unreadCount = conversations.filter((c) => c.unread).length;
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const id = window.setInterval(() => setNow(new Date()), 1000);
+    const orbitDur = 7;
+    const fadeStart = 16;
+    const fadeEnd = 9;
+    const start = performance.now();
+    let raf = 0;
+    let lastBoltUpdate = -1000;
+    const tick = (now: number) => {
+      const t = (now - start) / 1000;
+      const positions: Vec2[] = [0, 60, 120].map((angleDeg, i) => {
+        const leadBegin = i * -(orbitDur / 3);
+        const progress = (((t - leadBegin) / orbitDur) % 1 + 1) % 1;
+        const theta = progress * 2 * Math.PI;
+        const lx = 22 * Math.cos(theta);
+        const ly = 9 * Math.sin(theta);
+        const a = (angleDeg * Math.PI) / 180;
+        return {
+          x: lx * Math.cos(a) - ly * Math.sin(a),
+          y: lx * Math.sin(a) + ly * Math.cos(a),
+        };
+      });
+      setElectronPositions(positions);
+
+      if (now - lastBoltUpdate > 70) {
+        const hover = atomHoverRef.current;
+        const bolts = positions.map((p) => {
+          if (hover) {
+            return { d: generateBoltPath(p), intensity: 1 };
+          }
+          const dist = Math.hypot(p.x, p.y);
+          if (dist >= fadeStart) return null;
+          const intensity = Math.max(
+            0,
+            Math.min(1, (fadeStart - dist) / (fadeStart - fadeEnd)),
+          );
+          return { d: generateBoltPath(p), intensity };
+        });
+        setAtomBolts(bolts);
+        lastBoltUpdate = now;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(new Date()), 30000);
     return () => window.clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    if (!navOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setNavOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [navOpen]);
+
+  const [signoutOpen, setSignoutOpen] = useState(false);
+
+  const openProfileShortcut = (sectionId: ProfileShortcutId) => {
+    setActiveDock('profile');
+    setAccountOpen(false);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        window.dispatchEvent(
+          new CustomEvent<ProfileShortcutId>(PROFILE_OPEN_MODAL_EVENT, {
+            detail: sectionId,
+          }),
+        );
+      });
+    });
+  };
+
+  const goToProfile = () => {
+    setActiveDock('profile');
+    setAccountOpen(false);
+  };
 
   const timeLabel = now.toLocaleTimeString('tr-TR', {
     hour: '2-digit',
     minute: '2-digit',
-    second: '2-digit',
   });
 
   const mouseX = useMotionValue(0);
@@ -131,16 +307,23 @@ const InfiniteGrid = ({
   const maskImage = useMotionTemplate`radial-gradient(${revealRadius}px circle at ${mouseX}px ${mouseY}px, black, transparent)`;
 
   const dockPages: { key: string; alt: string; icon: React.ReactNode }[] = [
-    { key: 'overview', alt: 'Gösterge', icon: <LayoutGrid className="w-6 h-6" /> },
-    { key: 'listings', alt: 'İlanlar', icon: <Layers className="w-6 h-6" /> },
-    { key: 'customers', alt: 'Müşteriler', icon: <Users className="w-6 h-6" /> },
-    { key: 'finance', alt: 'Finans', icon: <Wallet className="w-6 h-6" /> },
-    { key: 'reports', alt: 'Raporlar', icon: <BarChart3 className="w-6 h-6" /> },
-    { key: 'calendar', alt: 'Takvim', icon: <Calendar className="w-6 h-6" /> },
-    { key: 'messages', alt: 'Mesajlar', icon: <MessageSquare className="w-6 h-6" /> },
-    { key: 'search', alt: 'Ara', icon: <Search className="w-6 h-6" /> },
-    { key: 'profile', alt: 'Profil', icon: <User className="w-6 h-6" /> },
+    { key: 'overview', alt: 'Gösterge', icon: <LayoutGrid className="w-5 h-5" /> },
+    { key: 'listings', alt: 'İlanlar', icon: <Layers className="w-5 h-5" /> },
+    { key: 'customers', alt: 'Müşteriler', icon: <Users className="w-5 h-5" /> },
+    { key: 'finance', alt: 'Finans', icon: <Wallet className="w-5 h-5" /> },
+    { key: 'reports', alt: 'Raporlar', icon: <BarChart3 className="w-5 h-5" /> },
+    { key: 'calendar', alt: 'Takvim', icon: <Calendar className="w-5 h-5" /> },
+    { key: 'messages', alt: 'Mesajlar', icon: <MessageSquare className="w-5 h-5" /> },
+    { key: 'search', alt: 'Ara', icon: <Search className="w-5 h-5" /> },
+    { key: 'profile', alt: 'Profil', icon: <User className="w-5 h-5" /> },
   ];
+
+  const navPages = dockPages.filter((p) =>
+    ['overview', 'listings', 'customers', 'finance', 'reports', 'calendar'].includes(p.key)
+  );
+
+  const activePageLabel =
+    dockPages.find((p) => p.key === activeDock)?.alt ?? 'Gösterge';
 
   const dockIcons: DockIcon[] = dockPages.map((p) => ({
     alt: p.alt,
@@ -178,91 +361,198 @@ const InfiniteGrid = ({
 
       <div className="absolute bottom-6 left-6 z-30 pointer-events-auto flex flex-col items-start gap-3">
         <AnimatePresence>
-          {panelOpen && (
-            <motion.div
-              key="control-panel"
-              initial={{ opacity: 0, y: 12, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 12, scale: 0.95 }}
-              transition={{ type: 'spring', stiffness: 380, damping: 28 }}
-              className="origin-bottom-left flex flex-col gap-3 w-[240px]"
-            >
-              <div className="bg-background/80 backdrop-blur-md border border-border p-4 rounded-xl shadow-2xl space-y-4">
-                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                  <SlidersHorizontal className="w-4 h-4" />
-                  Tweaks
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-[10px] text-muted-foreground uppercase tracking-widest font-mono">
-                    <span className="flex items-center gap-1.5 text-foreground/80">
-                      <Gauge className="w-3 h-3" />
-                      Speed
-                    </span>
-                    <span>{speed.toFixed(2)}x</span>
+          {accountOpen && (
+            <>
+              <motion.div
+                key="account-overlay"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                onClick={() => setAccountOpen(false)}
+                className="fixed inset-0 z-[-1]"
+                aria-hidden="true"
+              />
+              <motion.div
+                key="account-menu"
+                initial={{ opacity: 0, y: 12, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 12, scale: 0.96 }}
+                transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+                role="menu"
+                aria-label="Atölye kısayolları"
+                className="origin-bottom-left w-[300px] overflow-hidden rounded-xl border border-border bg-background/85 backdrop-blur-xl shadow-2xl"
+              >
+                <div className="px-4 py-3 border-b border-border/60">
+                  <div className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-muted-foreground">
+                    Hesap kısayolları
                   </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="3"
-                    step="0.05"
-                    value={speed}
-                    onChange={(e) => setSpeed(Number(e.target.value))}
-                    className="w-full h-1.5 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-[10px] text-muted-foreground uppercase tracking-widest font-mono">
-                    <span className="flex items-center gap-1.5 text-foreground/80">
-                      <Aperture className="w-3 h-3" />
-                      Reveal
-                    </span>
-                    <span>{revealRadius}px</span>
+                  <div className="mt-0.5 text-sm text-foreground">
+                    Sık kullanılan ayarlar
                   </div>
-                  <input
-                    type="range"
-                    min="100"
-                    max="700"
-                    value={revealRadius}
-                    onChange={(e) => setRevealRadius(Number(e.target.value))}
-                    className="w-full h-1.5 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
-                  />
                 </div>
-              </div>
 
-              <div className="bg-background/80 backdrop-blur-md border border-border p-4 rounded-xl shadow-2xl space-y-3">
-                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                  <Settings2 className="w-4 h-4" />
-                  Grid Density
-                </div>
-                <input
-                  type="range"
-                  min="20"
-                  max="100"
-                  value={gridSize}
-                  onChange={(e) => setGridSize(Number(e.target.value))}
-                  className="w-full h-1.5 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
-                />
-                <div className="flex justify-between text-[10px] text-muted-foreground uppercase tracking-widest font-mono">
-                  <span>Dense</span>
-                  <span>Sparse ({gridSize}px)</span>
-                </div>
-              </div>
-            </motion.div>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={goToProfile}
+                  className="group flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-foreground/[0.06] border-b border-border/60"
+                >
+                  <div className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-stone-700/10 text-sm font-semibold text-stone-800 dark:bg-stone-200/10 dark:text-stone-200">
+                    T
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-foreground">Profilim</p>
+                    <p className="text-[11px] text-muted-foreground truncate">
+                      Tuna Yıldız · Atölye Yöneticisi
+                    </p>
+                  </div>
+                  <ChevronRight className="h-3.5 w-3.5 flex-none text-muted-foreground/60 transition-transform group-hover:translate-x-0.5" />
+                </button>
+
+                <nav className="p-2 grid grid-cols-1 gap-1.5">
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => openProfileShortcut(PROFILE_SHORTCUT_IDS.general)}
+                    className="group flex items-start gap-3 rounded-lg p-2.5 text-left transition-colors hover:bg-foreground/[0.06]"
+                  >
+                    <div className="flex h-8 w-8 flex-none items-center justify-center rounded-md bg-stone-700/10 text-stone-800 dark:bg-stone-200/10 dark:text-stone-200">
+                      <Settings2 className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-foreground">Genel ayarlar</p>
+                      <p className="text-[11px] text-muted-foreground truncate">Dil, tema, bildirim sesleri</p>
+                    </div>
+                    <ChevronRight className="mt-1.5 h-3.5 w-3.5 flex-none text-muted-foreground/60 transition-transform group-hover:translate-x-0.5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => openProfileShortcut(PROFILE_SHORTCUT_IDS.workshop)}
+                    className="group flex items-start gap-3 rounded-lg p-2.5 text-left transition-colors hover:bg-foreground/[0.06]"
+                  >
+                    <div className="flex h-8 w-8 flex-none items-center justify-center rounded-md bg-stone-700/10 text-stone-800 dark:bg-stone-200/10 dark:text-stone-200">
+                      <Building2 className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-foreground">Atölye bilgisi</p>
+                      <p className="text-[11px] text-muted-foreground truncate">İletişim, vergi numarası, logo</p>
+                    </div>
+                    <ChevronRight className="mt-1.5 h-3.5 w-3.5 flex-none text-muted-foreground/60 transition-transform group-hover:translate-x-0.5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => openProfileShortcut(PROFILE_SHORTCUT_IDS.team)}
+                    className="group flex items-start gap-3 rounded-lg p-2.5 text-left transition-colors hover:bg-foreground/[0.06]"
+                  >
+                    <div className="flex h-8 w-8 flex-none items-center justify-center rounded-md bg-stone-700/10 text-stone-800 dark:bg-stone-200/10 dark:text-stone-200">
+                      <Users className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-foreground">Ekip & rol</p>
+                      <p className="text-[11px] text-muted-foreground truncate">4 kişilik ekip · roller</p>
+                    </div>
+                    <ChevronRight className="mt-1.5 h-3.5 w-3.5 flex-none text-muted-foreground/60 transition-transform group-hover:translate-x-0.5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => openProfileShortcut(PROFILE_SHORTCUT_IDS.notifications)}
+                    className="group flex items-start gap-3 rounded-lg p-2.5 text-left transition-colors hover:bg-foreground/[0.06]"
+                  >
+                    <div className="flex h-8 w-8 flex-none items-center justify-center rounded-md bg-stone-700/10 text-stone-800 dark:bg-stone-200/10 dark:text-stone-200">
+                      <Bell className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-foreground">Bildirim tercihleri</p>
+                      <p className="text-[11px] text-muted-foreground truncate">Sıcak müşteri, evrak, kaparo</p>
+                    </div>
+                    {unreadCount > 0 && (
+                      <span className="mt-1 font-mono text-[10px] tabular-nums tracking-wider text-muted-foreground">
+                        {unreadCount}
+                      </span>
+                    )}
+                    <ChevronRight className="mt-1.5 h-3.5 w-3.5 flex-none text-muted-foreground/60 transition-transform group-hover:translate-x-0.5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    role="menuitemcheckbox"
+                    aria-checked={isDark}
+                    onClick={onToggleTheme}
+                    className="group flex items-start gap-3 rounded-lg p-2.5 text-left transition-colors hover:bg-foreground/[0.06]"
+                  >
+                    <div className="flex h-8 w-8 flex-none items-center justify-center rounded-md bg-stone-700/10 text-stone-800 dark:bg-stone-200/10 dark:text-stone-200">
+                      {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-foreground">Karanlık mod</p>
+                      <p className="text-[11px] text-muted-foreground truncate">
+                        {isDark ? 'Açık temaya geç' : 'Koyu temaya geç'}
+                      </p>
+                    </div>
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        'mt-1 flex h-4 w-7 flex-none items-center rounded-full border border-border/70 px-0.5 transition-colors',
+                        isDark ? 'bg-foreground/80 justify-end' : 'bg-background/40 justify-start'
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          'h-3 w-3 rounded-full transition-colors',
+                          isDark ? 'bg-background' : 'bg-foreground/70'
+                        )}
+                      />
+                    </span>
+                  </button>
+                </nav>
+
+                <div className="border-t border-border/60" />
+
+                <button
+                  type="button"
+                  onClick={goToProfile}
+                  className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-foreground hover:bg-foreground/[0.06] transition-colors"
+                >
+                  <span className="text-muted-foreground">Tüm hesap ayarları</span>
+                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
+
+                <div className="border-t border-border/60" />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAccountOpen(false);
+                    setSignoutOpen(true);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-700 dark:text-red-300 hover:bg-red-600/[0.08] transition-colors"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span className="flex-1 text-left">Çıkış yap</span>
+                </button>
+              </motion.div>
+            </>
           )}
         </AnimatePresence>
 
         <motion.button
-          onClick={() => setPanelOpen((v) => !v)}
+          onClick={() => setAccountOpen((v) => !v)}
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.92 }}
-          aria-label={panelOpen ? 'Close controls' : 'Open controls'}
-          aria-expanded={panelOpen}
+          aria-label={accountOpen ? 'Kısayolları kapat' : 'Kısayolları aç'}
+          aria-expanded={accountOpen}
+          aria-haspopup="menu"
           className="w-11 h-11 rounded-full bg-background/80 backdrop-blur-md border border-border shadow-lg flex items-center justify-center text-foreground hover:bg-background transition-colors"
         >
           <AnimatePresence mode="wait" initial={false}>
-            {panelOpen ? (
+            {accountOpen ? (
               <motion.span
                 key="close"
                 initial={{ rotate: -90, opacity: 0 }}
@@ -289,158 +579,173 @@ const InfiniteGrid = ({
         </motion.button>
       </div>
 
-      <div className="fixed top-0 left-6 right-6 lg:left-12 lg:right-12 xl:left-20 xl:right-20 z-30 pointer-events-auto">
-        <GlassEffect className="rounded-t-none rounded-b-3xl px-6 py-3 w-full">
-          <div className="flex items-center gap-3 w-full">
-            <button
-              type="button"
-              onClick={() => setActiveDock('overview')}
-              aria-label="Anasayfaya dön"
-              className="flex items-center gap-3 min-w-0 rounded-xl px-1 py-0.5 -ml-1 transition-colors hover:bg-background/40"
+      <AnimatePresence>
+        {navOpen && (
+          <motion.div
+            key="nav-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setNavOpen(false)}
+            className="fixed inset-0 z-30 bg-foreground/20 backdrop-blur-sm"
+            aria-hidden="true"
+          />
+        )}
+      </AnimatePresence>
+
+      <motion.div
+        layout
+        transition={{ duration: 0.8, ease: [0.32, 0.72, 0, 1] }}
+        animate={{ borderRadius: navOpen ? 28 : 999 }}
+        className="fixed top-4 left-1/2 z-40 pointer-events-auto overflow-hidden border border-border/70 bg-background/80 shadow-[0_8px_24px_rgba(80,60,40,0.1),0_0_16px_rgba(80,60,40,0.05)] dark:bg-stone-900/70 dark:shadow-[0_8px_24px_rgba(20,14,10,0.45),0_0_24px_rgba(20,14,10,0.22)]"
+        style={{
+          x: '-50%',
+          width: navOpen ? 'min(94vw, 580px)' : 'min(92vw, 500px)',
+          backdropFilter: 'blur(14px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(14px) saturate(180%)',
+        }}
+      >
+        <AnimatePresence mode="popLayout" initial={false}>
+          {!navOpen ? (
+            <motion.div
+              key="pill"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.35, ease: 'easeOut' }}
+              role="button"
+              tabIndex={0}
+              aria-label="Hızlı gezinme"
+              aria-haspopup="dialog"
+              aria-expanded={navOpen}
+              onClick={() => setNavOpen(true)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setNavOpen(true);
+                }
+              }}
+              className="flex items-center justify-between gap-4 w-full px-5 py-2 cursor-pointer hover:bg-foreground/[0.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 transition-colors"
             >
-              <Sparkles className="w-5 h-5 flex-none" />
-              <span className="text-base font-semibold tracking-tight">sahibinden</span>
-              <span className="hidden md:inline-block h-5 w-px bg-border" aria-hidden="true" />
-              <div className="hidden md:flex flex-col leading-tight text-left">
-                <span className="text-sm font-medium">Tuna</span>
-                <span className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-muted-foreground">
-                  Atölye · IST
-                </span>
+              <div className="flex items-center gap-2.5 min-w-0">
+                <Sparkles className="w-6 h-6 flex-none" />
+                <span className="text-sm font-semibold tracking-tight">sahibinden</span>
               </div>
-            </button>
 
-            <div
-              role="toolbar"
-              aria-label="Canlı durum"
-              className="hidden lg:flex items-center gap-2 flex-none"
-            >
-              <button
-                type="button"
-                title="Sıcak görüşmeler — kaparoya yakın"
-                onClick={() => setActiveDock('customers')}
-                className="group flex items-center gap-2 rounded-full border border-border/60 bg-background/30 px-3 py-1.5 backdrop-blur-md transition-colors hover:bg-background/60"
-              >
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-600 dark:bg-amber-300 shadow-[0_0_8px_currentColor]" />
-                <span className="text-sm font-medium tabular-nums">{hotCount}</span>
-                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                  sıcak görüşme
-                </span>
-              </button>
-
-              <button
-                type="button"
-                title="Tapu işlemi 7 gün+ bekleyen evraklar"
-                onClick={() => setActiveDock('finance')}
-                className="group flex items-center gap-2 rounded-full border border-border/60 bg-background/30 px-3 py-1.5 backdrop-blur-md transition-colors hover:bg-background/60"
-              >
-                <span className="h-1.5 w-1.5 rounded-full bg-red-600 dark:bg-red-400 shadow-[0_0_8px_currentColor]" />
-                <span className="text-sm font-medium tabular-nums">{pendingDocs}</span>
-                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                  bekleyen evrak
-                </span>
-              </button>
-
-              <button
-                type="button"
-                title="Bugün gelen kaparolar"
-                onClick={() => setActiveDock('finance')}
-                className="group flex items-center gap-2 rounded-full border border-border/60 bg-background/30 px-3 py-1.5 backdrop-blur-md transition-colors hover:bg-background/60"
-              >
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400 shadow-[0_0_8px_currentColor]" />
-                <span className="text-sm font-medium tabular-nums">{todayDeposits}</span>
-                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                  kaparo bugün
-                </span>
-              </button>
-
-              <button
-                type="button"
-                title="Haftalık ciro · geçen haftaya göre"
-                onClick={() => setActiveDock('reports')}
-                className="group flex items-center gap-2 rounded-full border border-border/60 bg-background/30 px-3 py-1.5 backdrop-blur-md transition-colors hover:bg-background/60"
-              >
-                <svg
-                  viewBox="0 0 36 14"
-                  className="h-3 w-9 text-emerald-700 dark:text-emerald-300"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
+              <div className="flex items-center gap-2 flex-none">
+                <span
+                  aria-label={`Şu an: ${activePageLabel}`}
+                  className="hidden sm:inline-flex items-center gap-2.5 rounded-full border border-border/60 bg-background/30 pl-3 pr-3.5 py-1.5 backdrop-blur-md"
                 >
-                  <polyline points="0,11 6,9 12,10 18,6 24,7 30,3 36,4" />
-                </svg>
-                <span className="text-sm font-medium tabular-nums text-emerald-700 dark:text-emerald-300">
-                  +18%
-                </span>
-                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                  bu hafta
-                </span>
-              </button>
-            </div>
-
-            <div className="flex-1" aria-hidden="true" />
-
-            <div className="flex items-center gap-2 flex-none">
-              <span
-                aria-label="Canlı saat"
-                className="hidden sm:inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/30 px-3 py-1.5 backdrop-blur-md"
-              >
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-60 animate-ping" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400" />
-                </span>
-                <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                  Canlı
-                </span>
-                <span className="font-mono text-xs tabular-nums tracking-wider">
-                  {timeLabel}
-                </span>
-              </span>
-
-              <button
-                type="button"
-                onClick={onToggleTheme}
-                aria-label="Temayı değiştir"
-                className="flex items-center justify-center w-9 h-9 rounded-full bg-background/30 hover:bg-background/60 transition-colors"
-              >
-                {isDark ? (
-                  <Sun className="w-4 h-4 text-stone-200" />
-                ) : (
-                  <Moon className="w-4 h-4 text-stone-700" />
-                )}
-              </button>
-
-              <button
-                type="button"
-                aria-label="Bildirimler"
-                onClick={() => setActiveDock('messages')}
-                className="relative flex items-center justify-center w-9 h-9 rounded-full bg-background/30 hover:bg-background/60 transition-colors"
-              >
-                <Bell className="w-4 h-4" />
-                {unreadCount > 0 && (
-                  <span
-                    aria-hidden="true"
-                    className="absolute -top-0.5 -right-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-600 px-1 font-mono text-[9px] font-medium tabular-nums text-white dark:bg-red-400 dark:text-stone-900"
-                  >
-                    {unreadCount}
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-60 animate-ping" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400" />
                   </span>
-                )}
-              </button>
+                  <span className="text-xs leading-none">
+                    <span className="text-muted-foreground">Şu an: </span>
+                    <span className="font-medium text-foreground">{activePageLabel}</span>
+                  </span>
+                  <span className="h-3 w-px bg-border/70" aria-hidden="true" />
+                  <span className="font-mono text-xs tabular-nums tracking-wider text-muted-foreground">
+                    {timeLabel}
+                  </span>
+                </span>
 
-              <button
-                type="button"
-                aria-label="Profil"
-                onClick={() => setActiveDock('profile')}
-                className="flex items-center justify-center w-9 h-9 rounded-full bg-background/30 hover:bg-background/60 transition-colors text-sm font-medium"
-              >
-                T
-              </button>
-            </div>
-          </div>
-        </GlassEffect>
-      </div>
+                <button
+                  type="button"
+                  aria-label="Bildirimler"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveDock('messages');
+                    setNavOpen(false);
+                  }}
+                  className="relative flex items-center justify-center w-9 h-9 rounded-full bg-background/30 hover:bg-background/60 transition-colors"
+                >
+                  <Bell className="w-4 h-4" />
+                  {unreadCount > 0 && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute -top-0.5 -right-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-600 px-1 font-mono text-[9px] font-medium tabular-nums text-white dark:bg-red-400 dark:text-stone-900"
+                    >
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="body"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 6 }}
+              transition={{ duration: 0.55, delay: 0.15, ease: [0.32, 0.72, 0, 1] }}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Hızlı gezinme"
+              className="flex flex-col px-5 py-4 gap-3"
+            >
+              <div className="flex items-center justify-between gap-3 pb-3 border-b border-border/60">
+                <h2 className="text-base font-semibold text-foreground leading-none">
+                  Nereye gitmek istersin?
+                </h2>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setNavOpen(false);
+                  }}
+                  aria-label="Kapat"
+                  className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-background/40 text-muted-foreground transition-all hover:bg-foreground/[0.08] hover:text-foreground hover:rotate-90"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {navPages.map((p) => {
+                  const isActive = activeDock === p.key;
+                  return (
+                    <button
+                      key={p.key}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveDock(p.key);
+                        setNavOpen(false);
+                      }}
+                      className={cn(
+                        'group relative flex flex-col items-center justify-center gap-2 rounded-2xl border px-3 py-4 text-center transition-all',
+                        isActive
+                          ? 'border-foreground/60 bg-foreground/[0.08] text-foreground shadow-inner'
+                          : 'border-border/60 bg-background/40 text-foreground/85 hover:-translate-y-0.5 hover:border-foreground/40 hover:bg-foreground/[0.05]'
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          'flex h-9 w-9 items-center justify-center rounded-xl transition-colors',
+                          isActive
+                            ? 'bg-foreground/10 text-foreground'
+                            : 'bg-stone-700/10 text-stone-800 dark:bg-stone-200/10 dark:text-stone-200 group-hover:bg-foreground/10'
+                        )}
+                      >
+                        {p.icon}
+                      </span>
+                      <span className="text-sm font-medium leading-none">{p.alt}</span>
+                      {isActive && (
+                        <span
+                          aria-hidden="true"
+                          className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400 shadow-[0_0_8px_currentColor]"
+                        />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
 
       <div className="dock-reveal group absolute bottom-0 left-1/2 z-30 hidden h-24 w-[460px] max-w-[92vw] -translate-x-1/2 items-end justify-center pointer-events-none md:flex">
         <div
@@ -489,7 +794,11 @@ const InfiniteGrid = ({
         />
       )}
 
-      <div className="fixed bottom-20 right-6 z-40 pointer-events-auto">
+      <div
+        className="fixed bottom-20 right-6 z-40 pointer-events-auto"
+        onPointerEnter={() => setAtomHover(true)}
+        onPointerLeave={() => setAtomHover(false)}
+      >
         <GlassButton
           size="icon"
           aria-label="Yapay zeka asistanı"
@@ -511,10 +820,15 @@ const InfiniteGrid = ({
             style={{ transformOrigin: 'center' }}
           >
             <defs>
-              <radialGradient id="atom-nucleus" cx="32%" cy="28%" r="75%">
-                <stop offset="0%" stopColor="#8d6e63" />
-                <stop offset="55%" stopColor="#4e342e" />
-                <stop offset="100%" stopColor="#2a1a14" />
+              <radialGradient id="atom-nucleus" cx="35%" cy="30%" r="80%">
+                <stop offset="0%" stopColor="#f0fbff" />
+                <stop offset="35%" stopColor="#5cc6ff" />
+                <stop offset="100%" stopColor="#0b3aa8" />
+              </radialGradient>
+              <radialGradient id="atom-nucleus-aura" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#aee6ff" stopOpacity="0.95" />
+                <stop offset="55%" stopColor="#3a9bff" stopOpacity="0.35" />
+                <stop offset="100%" stopColor="#1f5dff" stopOpacity="0" />
               </radialGradient>
               <filter id="atom-depth" x="-50%" y="-50%" width="200%" height="200%">
                 <feGaussianBlur in="SourceAlpha" stdDeviation="0.5" />
@@ -527,21 +841,41 @@ const InfiniteGrid = ({
                   <feMergeNode in="SourceGraphic" />
                 </feMerge>
               </filter>
+              <filter id="atom-glow" x="-200%" y="-200%" width="500%" height="500%">
+                <feGaussianBlur stdDeviation="1.6" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+              <filter id="atom-bolt-glow" x="-100%" y="-100%" width="300%" height="300%">
+                <feGaussianBlur stdDeviation="0.7" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+              <filter id="bolt-halo" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="2.6" />
+              </filter>
+              <filter id="bolt-soft" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="0.9" />
+              </filter>
             </defs>
 
             <g filter="url(#atom-depth)">
-              {[0, 60, 120].map((angle, i) => (
+              {[0, 60, 120].map((angle) => (
                 <g key={angle} transform={`rotate(${angle})`}>
                   <ellipse
                     cx="0"
-                    cy="0.5"
+                    cy="0"
                     rx="22"
                     ry="9"
                     fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.6"
-                    strokeLinecap="round"
-                    opacity="0.35"
+                    stroke="#1d6cff"
+                    strokeWidth={3.6}
+                    opacity={0.55}
+                    filter="url(#bolt-halo)"
                   />
                   <ellipse
                     cx="0"
@@ -549,33 +883,88 @@ const InfiniteGrid = ({
                     rx="22"
                     ry="9"
                     fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.4"
-                    strokeLinecap="round"
+                    stroke="#7ac4ff"
+                    strokeWidth={1.4}
+                    opacity={0.9}
+                    filter="url(#bolt-soft)"
                   />
                   <ellipse
                     cx="0"
-                    cy="-0.45"
+                    cy="0"
                     rx="22"
                     ry="9"
                     fill="none"
-                    stroke="currentColor"
-                    strokeWidth="0.55"
-                    strokeLinecap="round"
-                    opacity="0.55"
+                    stroke="#ffffff"
+                    strokeWidth={0.55}
+                    opacity={0.95}
                   />
-                  <circle r="1.8" fill="currentColor">
-                    <animateMotion
-                      dur="2.4s"
-                      repeatCount="indefinite"
-                      begin={`${i * -0.8}s`}
-                      path="M22,0 A22,9 0 1,1 -22,0 A22,9 0 1,1 22,0"
-                    />
-                  </circle>
                 </g>
               ))}
 
-              <circle cx="0" cy="0" r="4" fill="url(#atom-nucleus)" />
+              {electronPositions.map((p, idx) => (
+                <circle
+                  key={`e-${idx}`}
+                  cx={p.x}
+                  cy={p.y}
+                  r={1.9}
+                  fill="#e9f6ff"
+                  filter="url(#atom-glow)"
+                />
+              ))}
+
+              <g>
+                {atomBolts.map((bolt, idx) =>
+                  bolt ? (
+                    <g key={`bolt-${idx}`} opacity={bolt.intensity}>
+                      <path
+                        d={bolt.d}
+                        fill="none"
+                        stroke="#0b3aa8"
+                        strokeWidth={3.4}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        opacity={0.7}
+                        filter="url(#bolt-halo)"
+                      />
+                      <path
+                        d={bolt.d}
+                        fill="none"
+                        stroke="#1d6cff"
+                        strokeWidth={1.6}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        opacity={0.95}
+                        filter="url(#bolt-soft)"
+                      />
+                      <path
+                        d={bolt.d}
+                        fill="none"
+                        stroke="#7ac4ff"
+                        strokeWidth={0.7}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        opacity={1}
+                      />
+                    </g>
+                  ) : null,
+                )}
+              </g>
+              <motion.circle
+                cx="0"
+                cy="0"
+                r="7"
+                fill="url(#atom-nucleus-aura)"
+                animate={{ scale: [1, 1.25, 1], opacity: [0.55, 0.95, 0.55] }}
+                transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+                style={{ transformOrigin: 'center' }}
+              />
+              <circle
+                cx="0"
+                cy="0"
+                r="4"
+                fill="url(#atom-nucleus)"
+                filter="url(#atom-glow)"
+              />
             </g>
           </motion.svg>
         </GlassButton>
@@ -586,6 +975,41 @@ const InfiniteGrid = ({
         onClose={() => setAssistantOpen(false)}
         onPickModule={(target) => setActiveDock(target)}
       />
+
+      <Dialog
+        open={signoutOpen}
+        onClose={() => setSignoutOpen(false)}
+        size="sm"
+        title="Çıkış yap"
+        description="Hesaptan çıkmak üzeresin. Yerel demo verisi de sıfırlanır."
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setSignoutOpen(false)}
+              className={buttonGhost}
+            >
+              Vazgeç
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                resetStore();
+                setSignoutOpen(false);
+                setActiveDock('overview');
+              }}
+              className={buttonDanger}
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              Çıkış yap
+            </button>
+          </>
+        }
+      >
+        <p className="text-sm text-muted-foreground">
+          Bu cihazdaki oturumun sonlandırılır ve atölye verisi başlangıç hâline döner.
+        </p>
+      </Dialog>
 
       <div className="absolute inset-0 z-10 overflow-y-auto overflow-x-hidden">
         {activeDock === 'overview' && <DashboardHome onNavigate={setActiveDock} />}

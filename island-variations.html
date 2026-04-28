@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4 Island Variations — Dashboard Navigation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #000000;
+    --surface: #0A0A0A;
+    --surface-2: #141414;
+    --surface-3: #1C1C1C;
+    --border: #222222;
+    --border-strong: #333333;
+    --text: #FFFFFF;
+    --text-dim: #A3A3A3;
+    --text-muted: #555555;
+    --accent: #B8FF00;
+    --accent-glow: rgba(184, 255, 0, 0.4);
+    --accent-dim: #7A9F1E;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Geist', sans-serif;
+    font-weight: 400;
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(circle at 20% 10%, rgba(184, 255, 0, 0.04), transparent 40%),
+      radial-gradient(circle at 80% 90%, rgba(184, 255, 0, 0.03), transparent 40%);
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+    opacity: 0.04;
+    pointer-events: none;
+    z-index: 999;
+    mix-blend-mode: overlay;
+  }
+
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* ============ SWITCHER ============ */
+  .switcher {
+    position: sticky;
+    top: 16px;
+    z-index: 500;
+    max-width: fit-content;
+    margin: 20px auto 0;
+    padding: 5px;
+    background: rgba(10, 10, 10, 0.9);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    display: flex;
+    gap: 2px;
+  }
+
+  .switcher-btn {
+    font-family: 'Geist', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-dim);
+    background: transparent;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    letter-spacing: -0.01em;
+  }
+
+  .switcher-btn:hover { color: var(--text); }
+
+  .switcher-btn.active {
+    color: var(--bg);
+    background: var(--accent);
+  }
+
+  /* ============ INTRO ============ */
+  .intro {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 64px 32px 24px;
+    text-align: center;
+  }
+
+  .intro-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 20px;
+  }
+
+  .intro h1 {
+    font-family: 'Geist', sans-serif;
+    font-weight: 600;
+    font-size: clamp(36px, 6vw, 72px);
+    line-height: 0.95;
+    letter-spacing: -0.035em;
+    margin-bottom: 24px;
+  }
+
+  .intro h1 em {
+    font-style: normal;
+    font-weight: 300;
+    color: var(--accent);
+  }
+
+  .intro-sub {
+    font-size: 15px;
+    color: var(--text-dim);
+    max-width: 560px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  /* ============ STAGE ============ */
+  .stage {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 40px 28px 80px;
+  }
+
+  .pattern { display: none; }
+  .pattern.active { display: block; animation: fadeUp 0.45s cubic-bezier(0.2, 0.8, 0.2, 1); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .pattern-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 32px;
+    margin-bottom: 28px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .pattern-title {
+    font-family: 'Geist', sans-serif;
+    font-weight: 500;
+    font-size: 28px;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .pattern-title .num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    margin-right: 12px;
+    font-weight: 400;
+  }
+
+  .pattern-desc {
+    font-size: 14px;
+    color: var(--text-dim);
+    max-width: 620px;
+    line-height: 1.55;
+  }
+
+  .pattern-hint {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    padding: 6px 12px;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* ============ DEMO FRAME ============ */
+  .demo-frame {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+    position: relative;
+    min-height: 640px;
+    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.5);
+  }
+
+  /* ==================== Shared dashboard content ==================== */
+  .dash {
+    padding: 100px 40px 100px;
+    position: relative;
+    min-height: 100%;
+  }
+
+  .dash-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+
+  .dash-title {
+    font-family: 'Geist', sans-serif;
+    font-weight: 500;
+    font-size: 48px;
+    letter-spacing: -0.035em;
+    line-height: 0.95;
+    margin-bottom: 10px;
+  }
+
+  .dash-title em {
+    font-weight: 300;
+    font-style: normal;
+    color: var(--accent);
+  }
+
+  .dash-sub {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 28px;
+    max-width: 480px;
+  }
+
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 760px) {
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    .dash { padding: 90px 20px 100px; }
+  }
+
+  .kpi {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+
+  .kpi-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+
+  .kpi-val {
+    font-family: 'Geist', sans-serif;
+    font-weight: 400;
+    font-size: 28px;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .kpi-delta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+  }
+  .kpi-delta.d { color: #FF5D5D; }
+
+  .dash-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 10px;
+  }
+
+  @media (max-width: 760px) { .dash-row { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+  }
+
+  .panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 14px;
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  .panel-head .meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  .chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 110px;
+  }
+
+  .chart .bar {
+    flex: 1;
+    background: var(--accent);
+    border-radius: 3px 3px 1px 1px;
+    min-height: 6px;
+    opacity: 0.85;
+    transition: opacity 0.2s;
+  }
+  .chart .bar:hover { opacity: 1; box-shadow: 0 0 20px var(--accent-glow); }
+
+  .act {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .act:last-child { border-bottom: 0; }
+  .act .dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent-glow);
+    flex-shrink: 0;
+  }
+  .act .who { flex: 1; color: var(--text); }
+  .act .when {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  /* ==================== 1. BOTTOM DOCK ISLAND ==================== */
+  .p1-island {
+    position: absolute;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface-3);
+    border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    padding: 8px 10px 8px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: all 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+    z-index: 20;
+    overflow: hidden;
+    box-shadow:
+      0 10px 40px rgba(0, 0, 0, 0.6),
+      0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    will-change: width, height, border-radius;
+  }
+
+  .p1-island.compact {
+    width: 320px;
+    height: 48px;
+  }
+
+  .p1-island.expanded {
+    width: 420px;
+    height: auto;
+    border-radius: 24px;
+    padding: 16px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .p1-compact-face { display: flex; align-items: center; gap: 12px; width: 100%; }
+  .p1-island.expanded .p1-compact-face { display: none; }
+
+  .p1-indicator {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent-glow);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .p1-label { flex: 1; font-size: 13px; color: var(--text); }
+  .p1-label span { color: var(--text-muted); }
+
+  .p1-time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    padding-right: 8px;
+    padding-left: 8px;
+    border-left: 1px solid var(--border);
+  }
+
+  .p1-handle {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: transform 0.3s;
+  }
+
+  .p1-island.expanded .p1-handle { transform: rotate(45deg); }
+
+  .p1-handle svg { width: 14px; height: 14px; }
+
+  .p1-exp-body { display: none; width: 100%; }
+  .p1-island.expanded .p1-exp-body {
+    display: block;
+    animation: expIn 0.35s 0.1s both;
+  }
+
+  @keyframes expIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .p1-exp-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 4px 12px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+
+  .p1-exp-title {
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .p1-exp-close {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.2s;
+  }
+
+  .p1-exp-close:hover { transform: rotate(90deg); color: var(--text); }
+
+  .p1-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .p1-nav {
+    padding: 14px 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+
+  .p1-nav:hover {
+    background: var(--surface-2);
+    border-color: var(--accent);
+  }
+
+  .p1-nav svg {
+    width: 16px; height: 16px;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+
+  .p1-nav-label {
+    font-size: 11px;
+    color: var(--text);
+  }
+
+  /* ==================== 2. STACKED MULTI-ISLAND ==================== */
+  .p2-cluster {
+    position: absolute;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+    z-index: 20;
+    align-items: center;
+  }
+
+  .p2-pill {
+    background: var(--surface-3);
+    border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    padding: 10px 18px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.45s cubic-bezier(0.32, 0.72, 0, 1);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text);
+    position: relative;
+    height: 40px;
+    white-space: nowrap;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  }
+
+  .p2-pill:hover { border-color: var(--border-strong); background: var(--surface-2); }
+
+  .p2-cluster.has-active .p2-pill:not(.active) {
+    opacity: 0.4;
+    transform: scale(0.92);
+  }
+
+  .p2-pill.active {
+    background: var(--surface);
+    border-color: var(--accent);
+    padding: 16px 20px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    height: auto;
+    border-radius: 20px;
+    min-width: 320px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(184, 255, 0, 0.1);
+  }
+
+  .p2-pill .p2-ico {
+    width: 14px; height: 14px;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .p2-pill .p2-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent-glow);
+    flex-shrink: 0;
+    animation: pulse 2s infinite;
+  }
+
+  .p2-pill-content {
+    display: none;
+    width: 100%;
+  }
+
+  .p2-pill.active .p2-pill-content {
+    display: block;
+    animation: expIn 0.3s 0.1s both;
+  }
+
+  .p2-pill.active > .p2-compact {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+
+  .p2-compact {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .p2-label-text {
+    font-weight: 500;
+  }
+
+  .p2-pill.active .p2-close {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: none;
+    font-size: 10px;
+  }
+
+  .p2-close { display: none; }
+
+  .p2-nav-items {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+  }
+
+  .p2-nav-item {
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .p2-nav-item:hover { background: var(--surface-2); color: var(--text); }
+  .p2-nav-item svg { width: 13px; height: 13px; color: var(--accent); }
+
+  .p2-activity {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 11px;
+  }
+
+  .p2-activity-item {
+    padding: 6px 8px;
+    background: var(--surface-2);
+    border-radius: 6px;
+    color: var(--text-dim);
+  }
+  .p2-activity-item strong { color: var(--text); font-weight: 500; }
+
+  .p2-search-input {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 12px;
+    outline: none;
+    width: 100%;
+  }
+
+  /* ==================== 3. AMBIENT ALWAYS-ON ==================== */
+  .p3-bar {
+    position: absolute;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(180deg, var(--surface-3), var(--surface-2));
+    border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    z-index: 20;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    max-width: calc(100% - 48px);
+  }
+
+  .p3-seg {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    font-size: 12px;
+    color: var(--text-dim);
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+
+  .p3-seg:hover { background: var(--surface); color: var(--text); }
+
+  .p3-seg.active { background: var(--surface); color: var(--text); }
+
+  .p3-seg.brand {
+    color: var(--text);
+    font-weight: 500;
+    padding-left: 8px;
+  }
+
+  .p3-seg.brand .logo {
+    width: 22px; height: 22px;
+    background: var(--accent);
+    color: var(--bg);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 12px;
+  }
+
+  .p3-seg.live .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent-glow);
+    animation: pulse 2s infinite;
+  }
+
+  .p3-seg.time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .p3-divider {
+    width: 1px;
+    height: 16px;
+    background: var(--border);
+    margin: 0 2px;
+  }
+
+  .p3-seg.search {
+    flex: 1;
+    min-width: 200px;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.02em;
+  }
+
+  .p3-seg.search .kbd {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    padding: 2px 6px;
+    background: var(--surface-2);
+    border-radius: 3px;
+    color: var(--text-dim);
+    margin-left: auto;
+  }
+
+  .p3-seg.avatar {
+    width: 32px; height: 32px;
+    padding: 0;
+    background: linear-gradient(135deg, var(--accent), #7A9F1E);
+    color: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  /* Expanded search mode */
+  .p3-bar.searching {
+    padding: 12px;
+    border-radius: 20px;
+  }
+
+  .p3-bar.searching .p3-seg:not(.search) { display: none; }
+
+  .p3-bar.searching .p3-seg.search {
+    flex: 1;
+    background: transparent;
+  }
+
+  .p3-search-results {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: var(--surface-3);
+    border: 1px solid var(--border-strong);
+    border-radius: 16px;
+    padding: 8px;
+    display: none;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  }
+
+  .p3-bar.searching .p3-search-results { display: block; }
+
+  .p3-search-section {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 8px 10px 4px;
+  }
+
+  .p3-search-item {
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+  }
+  .p3-search-item:hover { background: var(--surface-2); color: var(--text); }
+  .p3-search-item .arr { margin-left: auto; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 10px; }
+
+  /* ==================== 4. SIDE PILL ==================== */
+  .p4-pill {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--surface-3);
+    border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    padding: 10px 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: all 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+    z-index: 20;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    will-change: width, height, border-radius;
+  }
+
+  .p4-pill.compact { width: 48px; }
+
+  .p4-pill.expanded {
+    right: 20px;
+    top: 20px;
+    transform: translateY(0);
+    width: 260px;
+    padding: 14px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    border-radius: 20px;
+  }
+
+  .p4-compact-items { display: flex; flex-direction: column; gap: 4px; }
+  .p4-pill.expanded .p4-compact-items { display: none; }
+
+  .p4-icon-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.2s;
+    background: transparent;
+    border: none;
+    position: relative;
+  }
+
+  .p4-icon-btn:hover { color: var(--text); background: var(--surface-2); }
+  .p4-icon-btn.active { color: var(--accent); background: var(--surface); }
+  .p4-icon-btn svg { width: 16px; height: 16px; }
+
+  .p4-icon-btn::before {
+    content: attr(data-label);
+    position: absolute;
+    right: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-family: 'Geist', sans-serif;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+  }
+  .p4-icon-btn:hover::before { opacity: 1; }
+
+  .p4-divider-v {
+    width: 20px; height: 1px;
+    background: var(--border);
+    margin: 2px 0;
+  }
+
+  .p4-exp-body { display: none; }
+  .p4-pill.expanded .p4-exp-body {
+    display: block;
+    animation: expIn 0.35s 0.1s both;
+  }
+
+  .p4-exp-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 10px;
+  }
+
+  .p4-exp-title {
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .p4-exp-close {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: none;
+    font-size: 14px;
+  }
+
+  .p4-exp-close:hover { color: var(--text); }
+
+  .p4-exp-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .p4-exp-item {
+    padding: 9px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+  }
+  .p4-exp-item:hover { background: var(--surface-2); color: var(--text); }
+  .p4-exp-item.active { background: rgba(184, 255, 0, 0.08); color: var(--accent); }
+  .p4-exp-item svg { width: 14px; height: 14px; }
+
+  .p4-exp-item .badge {
+    margin-left: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    background: var(--accent);
+    color: var(--bg);
+    padding: 2px 6px;
+    border-radius: 999px;
+    font-weight: 700;
+  }
+
+  /* footer */
+  .foot {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 32px 60px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+</style>
+</head>
+<body>
+
+<!-- Switcher -->
+<div class="switcher">
+  <button class="switcher-btn active" data-pattern="p1">01 Bottom Dock</button>
+  <button class="switcher-btn" data-pattern="p2">02 Stacked Multi</button>
+  <button class="switcher-btn" data-pattern="p3">03 Always-On Ambient</button>
+  <button class="switcher-btn" data-pattern="p4">04 Side Pill</button>
+</div>
+
+<!-- Intro -->
+<div class="intro">
+  <div class="intro-eyebrow">4 Dynamic Island varyasyonu</div>
+  <h1>Aynı fikir, <em>dört farklı</em> karakterde.</h1>
+  <p class="intro-sub">Dynamic Island mantığı — morphing bir kapsül — dört farklı konumda ve davranışta. Altta, yanda, her zaman açık veya birden fazla parçaya bölünmüş. Hepsi interaktif.</p>
+</div>
+
+<div class="stage">
+
+  <!-- ========== 1. BOTTOM DOCK ========== -->
+  <div class="pattern active" data-pattern="p1">
+    <div class="pattern-header">
+      <div>
+        <div class="pattern-title"><span class="num">01</span>Bottom Dock Island</div>
+        <div class="pattern-desc">Alt kenarda yüzen bir kapsül. Normal halde sadece bulunduğun sayfa ve saat. Tıklanınca yukarı doğru açılıp grid şeklinde navigasyon gösterir. Başparmak erişimi için mobil-natif hissi verir.</div>
+      </div>
+      <div class="pattern-hint">↓ Alttaki kapsüle tıkla</div>
+    </div>
+
+    <div class="demo-frame">
+      <div class="dash">
+        <div class="dash-label">22 Nisan · Çarşamba</div>
+        <h1 class="dash-title">İyi günler, <em>Mehmet</em>.</h1>
+        <p class="dash-sub">Ada altta bekliyor, ihtiyaç anında yukarı doğru açılacak.</p>
+
+        <div class="kpi-row">
+          <div class="kpi"><div class="kpi-label">Gelir</div><div class="kpi-val mono">₺284K</div><div class="kpi-delta">↑ 12.4%</div></div>
+          <div class="kpi"><div class="kpi-label">Kullanıcı</div><div class="kpi-val mono">1,248</div><div class="kpi-delta">↑ 3.1%</div></div>
+          <div class="kpi"><div class="kpi-label">Sipariş</div><div class="kpi-val mono">487</div><div class="kpi-delta d">↓ 1.8%</div></div>
+          <div class="kpi"><div class="kpi-label">Dönüşüm</div><div class="kpi-val mono">3.42%</div><div class="kpi-delta">↑ 0.4%</div></div>
+        </div>
+
+        <div class="dash-row">
+          <div class="panel">
+            <div class="panel-head">Haftalık Gelir <span class="meta">7 gün</span></div>
+            <div class="chart">
+              <div class="bar" style="height:40%"></div><div class="bar" style="height:62%"></div>
+              <div class="bar" style="height:55%"></div><div class="bar" style="height:78%"></div>
+              <div class="bar" style="height:48%"></div><div class="bar" style="height:85%"></div>
+              <div class="bar" style="height:92%"></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head">Son hareket <span class="meta">canlı</span></div>
+            <div class="act"><span class="dot"></span><span class="who">Ayşe sipariş verdi</span><span class="when">2d</span></div>
+            <div class="act"><span class="dot"></span><span class="who">Can ödeme yaptı</span><span class="when">14d</span></div>
+            <div class="act"><span class="dot"></span><span class="who">Zeynep iade talebi</span><span class="when">32d</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="p1-island compact" id="p1Island" onclick="p1Toggle(event)">
+        <div class="p1-compact-face">
+          <span class="p1-indicator"></span>
+          <span class="p1-label"><span>Şu an:</span> Özet</span>
+          <span class="p1-time mono">14:32</span>
+          <span class="p1-handle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </span>
+        </div>
+
+        <div class="p1-exp-body">
+          <div class="p1-exp-head">
+            <div class="p1-exp-title">Nereye gitmek istersin?</div>
+            <button class="p1-exp-close" onclick="p1Close(event)">×</button>
+          </div>
+          <div class="p1-grid">
+            <div class="p1-nav">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+              <div class="p1-nav-label">Özet</div>
+            </div>
+            <div class="p1-nav">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/></svg>
+              <div class="p1-nav-label">Kullanıcı</div>
+            </div>
+            <div class="p1-nav">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/></svg>
+              <div class="p1-nav-label">Sipariş</div>
+            </div>
+            <div class="p1-nav">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/></svg>
+              <div class="p1-nav-label">Ürün</div>
+            </div>
+            <div class="p1-nav">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              <div class="p1-nav-label">Rapor</div>
+            </div>
+            <div class="p1-nav">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6"/></svg>
+              <div class="p1-nav-label">Ayar</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 2. STACKED MULTI ========== -->
+  <div class="pattern" data-pattern="p2">
+    <div class="pattern-header">
+      <div>
+        <div class="pattern-title"><span class="num">02</span>Stacked Multi-Island</div>
+        <div class="pattern-desc">Tek bir ada yerine üç ayrı ada yan yana — her biri farklı bir işlev. Biri tıklanınca genişler, diğerleri arka plana solar. Parçalı, modüler ve her zaman net: hangi adayı açtığın bellidir.</div>
+      </div>
+      <div class="pattern-hint">↑ Herhangi bir kapsüle tıkla</div>
+    </div>
+
+    <div class="demo-frame">
+      <div class="p2-cluster" id="p2Cluster">
+        <div class="p2-pill" data-id="nav" onclick="p2Toggle(event, 'nav')">
+          <div class="p2-compact">
+            <svg class="p2-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+            <span class="p2-label-text">Özet</span>
+            <button class="p2-close" onclick="p2Close(event)">×</button>
+          </div>
+          <div class="p2-pill-content">
+            <div class="p2-nav-items">
+              <div class="p2-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/></svg>Özet</div>
+              <div class="p2-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/></svg>Kullanıcı</div>
+              <div class="p2-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/></svg>Sipariş</div>
+              <div class="p2-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/></svg>Ürün</div>
+              <div class="p2-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/></svg>Rapor</div>
+              <div class="p2-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/></svg>Ayar</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="p2-pill" data-id="live" onclick="p2Toggle(event, 'live')">
+          <div class="p2-compact">
+            <span class="p2-dot"></span>
+            <span class="p2-label-text">3 canlı olay</span>
+            <button class="p2-close" onclick="p2Close(event)">×</button>
+          </div>
+          <div class="p2-pill-content">
+            <div class="p2-activity">
+              <div class="p2-activity-item"><strong>Ayşe K.</strong> — ₺1,240 sipariş · 2 dk önce</div>
+              <div class="p2-activity-item"><strong>Can T.</strong> — ödeme başarılı · 14 dk</div>
+              <div class="p2-activity-item"><strong>Zeynep A.</strong> — iade talebi · 32 dk</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="p2-pill" data-id="search" onclick="p2Toggle(event, 'search')">
+          <div class="p2-compact">
+            <svg class="p2-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <span class="p2-label-text">Ara</span>
+            <button class="p2-close" onclick="p2Close(event)">×</button>
+          </div>
+          <div class="p2-pill-content">
+            <input class="p2-search-input" placeholder="Kullanıcı, sipariş, ürün ara...">
+            <div class="p2-nav-items" style="margin-top:8px;">
+              <div class="p2-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/></svg>Son: "Ayşe"</div>
+              <div class="p2-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/></svg>Son: "#48291"</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dash">
+        <div class="dash-label">Modüler navigation</div>
+        <h1 class="dash-title">Üç ada, <em>üç işlev</em>.</h1>
+        <p class="dash-sub">Sol: navigasyon. Orta: canlı olaylar. Sağ: arama. Biri açılınca diğerleri solar, odak net kalır.</p>
+
+        <div class="kpi-row">
+          <div class="kpi"><div class="kpi-label">Gelir</div><div class="kpi-val mono">₺284K</div><div class="kpi-delta">↑ 12.4%</div></div>
+          <div class="kpi"><div class="kpi-label">Kullanıcı</div><div class="kpi-val mono">1,248</div><div class="kpi-delta">↑ 3.1%</div></div>
+          <div class="kpi"><div class="kpi-label">Sipariş</div><div class="kpi-val mono">487</div><div class="kpi-delta d">↓ 1.8%</div></div>
+          <div class="kpi"><div class="kpi-label">Dönüşüm</div><div class="kpi-val mono">3.42%</div><div class="kpi-delta">↑ 0.4%</div></div>
+        </div>
+
+        <div class="dash-row">
+          <div class="panel">
+            <div class="panel-head">Haftalık Gelir <span class="meta">7 gün</span></div>
+            <div class="chart">
+              <div class="bar" style="height:40%"></div><div class="bar" style="height:62%"></div>
+              <div class="bar" style="height:55%"></div><div class="bar" style="height:78%"></div>
+              <div class="bar" style="height:48%"></div><div class="bar" style="height:85%"></div>
+              <div class="bar" style="height:92%"></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head">Son hareket <span class="meta">canlı</span></div>
+            <div class="act"><span class="dot"></span><span class="who">Ayşe sipariş verdi</span><span class="when">2d</span></div>
+            <div class="act"><span class="dot"></span><span class="who">Can ödeme yaptı</span><span class="when">14d</span></div>
+            <div class="act"><span class="dot"></span><span class="who">Zeynep iade talebi</span><span class="when">32d</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 3. AMBIENT ALWAYS-ON ========== -->
+  <div class="pattern" data-pattern="p3">
+    <div class="pattern-header">
+      <div>
+        <div class="pattern-title"><span class="num">03</span>Always-On Ambient Bar</div>
+        <div class="pattern-desc">Hiç kapanmaz. Sürekli önünde duran geniş bir kapsül. Brand, bulunduğun yer, saat, canlı durum, arama ve profil — hepsi ambiently görünür. Arama bölümüne tıklayınca tüm kapsül search mode'una morph olur.</div>
+      </div>
+      <div class="pattern-hint">→ Search segmentine tıkla</div>
+    </div>
+
+    <div class="demo-frame">
+      <div class="p3-bar" id="p3Bar">
+        <div class="p3-seg brand">
+          <span class="logo">Ö</span>
+          Örnek
+        </div>
+
+        <div class="p3-divider"></div>
+
+        <div class="p3-seg active">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+          Özet
+        </div>
+
+        <div class="p3-seg">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/></svg>
+          Kullanıcı
+        </div>
+
+        <div class="p3-seg">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/></svg>
+          Sipariş
+        </div>
+
+        <div class="p3-divider"></div>
+
+        <div class="p3-seg live">
+          <span class="dot"></span>
+          3 canlı
+        </div>
+
+        <div class="p3-seg time">14:32</div>
+
+        <div class="p3-divider"></div>
+
+        <div class="p3-seg search" onclick="p3OpenSearch(event)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span>Ara veya komut yaz...</span>
+          <span class="kbd">⌘K</span>
+        </div>
+
+        <div class="p3-seg avatar">ME</div>
+
+        <div class="p3-search-results">
+          <div class="p3-search-section">Sayfalar</div>
+          <div class="p3-search-item">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent)"><circle cx="9" cy="7" r="4"/></svg>
+            Kullanıcılara git<span class="arr">G K</span>
+          </div>
+          <div class="p3-search-item">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent)"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/></svg>
+            Siparişlere git<span class="arr">G S</span>
+          </div>
+          <div class="p3-search-section">Hızlı işlem</div>
+          <div class="p3-search-item">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent)"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Yeni kullanıcı ekle<span class="arr">⌘N</span>
+          </div>
+          <div class="p3-search-item">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent)"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
+            CSV olarak dışa aktar
+          </div>
+        </div>
+      </div>
+
+      <div class="dash">
+        <div class="dash-label">Minimal chrome, maksimum bilgi</div>
+        <h1 class="dash-title">Ambient <em>çubuk</em>.</h1>
+        <p class="dash-sub">Nav, breadcrumb, canlı durum, saat ve arama hepsi tek bir kapsülde. Her zaman görünür ama yer kaplamaz.</p>
+
+        <div class="kpi-row">
+          <div class="kpi"><div class="kpi-label">Gelir</div><div class="kpi-val mono">₺284K</div><div class="kpi-delta">↑ 12.4%</div></div>
+          <div class="kpi"><div class="kpi-label">Kullanıcı</div><div class="kpi-val mono">1,248</div><div class="kpi-delta">↑ 3.1%</div></div>
+          <div class="kpi"><div class="kpi-label">Sipariş</div><div class="kpi-val mono">487</div><div class="kpi-delta d">↓ 1.8%</div></div>
+          <div class="kpi"><div class="kpi-label">Dönüşüm</div><div class="kpi-val mono">3.42%</div><div class="kpi-delta">↑ 0.4%</div></div>
+        </div>
+
+        <div class="dash-row">
+          <div class="panel">
+            <div class="panel-head">Haftalık Gelir <span class="meta">7 gün</span></div>
+            <div class="chart">
+              <div class="bar" style="height:40%"></div><div class="bar" style="height:62%"></div>
+              <div class="bar" style="height:55%"></div><div class="bar" style="height:78%"></div>
+              <div class="bar" style="height:48%"></div><div class="bar" style="height:85%"></div>
+              <div class="bar" style="height:92%"></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head">Son hareket <span class="meta">canlı</span></div>
+            <div class="act"><span class="dot"></span><span class="who">Ayşe sipariş verdi</span><span class="when">2d</span></div>
+            <div class="act"><span class="dot"></span><span class="who">Can ödeme yaptı</span><span class="when">14d</span></div>
+            <div class="act"><span class="dot"></span><span class="who">Zeynep iade talebi</span><span class="when">32d</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 4. SIDE PILL ========== -->
+  <div class="pattern" data-pattern="p4">
+    <div class="pattern-header">
+      <div>
+        <div class="pattern-title"><span class="num">04</span>Side Pill (Dikey Island)</div>
+        <div class="pattern-desc">Sağ kenarda dikey bir ada. Compact hali sadece ikonlar, başparmak mesafesinde. Tıklanınca sola doğru ve yatay şekilde morph olup full navigation paneline dönüşüyor. Tablet ve one-hand modu için de mükemmel.</div>
+      </div>
+      <div class="pattern-hint">→ Yan kapsüle tıkla</div>
+    </div>
+
+    <div class="demo-frame">
+      <div class="dash" style="padding-right: 100px;">
+        <div class="dash-label">Sağ kenarda</div>
+        <h1 class="dash-title">Dikey <em>ada</em>.</h1>
+        <p class="dash-sub">Sağ elle tablet kullanırken başparmağın tam yerinde. Tıklayınca yatay panele morph oluyor.</p>
+
+        <div class="kpi-row">
+          <div class="kpi"><div class="kpi-label">Gelir</div><div class="kpi-val mono">₺284K</div><div class="kpi-delta">↑ 12.4%</div></div>
+          <div class="kpi"><div class="kpi-label">Kullanıcı</div><div class="kpi-val mono">1,248</div><div class="kpi-delta">↑ 3.1%</div></div>
+          <div class="kpi"><div class="kpi-label">Sipariş</div><div class="kpi-val mono">487</div><div class="kpi-delta d">↓ 1.8%</div></div>
+          <div class="kpi"><div class="kpi-label">Dönüşüm</div><div class="kpi-val mono">3.42%</div><div class="kpi-delta">↑ 0.4%</div></div>
+        </div>
+
+        <div class="dash-row">
+          <div class="panel">
+            <div class="panel-head">Haftalık Gelir <span class="meta">7 gün</span></div>
+            <div class="chart">
+              <div class="bar" style="height:40%"></div><div class="bar" style="height:62%"></div>
+              <div class="bar" style="height:55%"></div><div class="bar" style="height:78%"></div>
+              <div class="bar" style="height:48%"></div><div class="bar" style="height:85%"></div>
+              <div class="bar" style="height:92%"></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head">Son hareket <span class="meta">canlı</span></div>
+            <div class="act"><span class="dot"></span><span class="who">Ayşe sipariş verdi</span><span class="when">2d</span></div>
+            <div class="act"><span class="dot"></span><span class="who">Can ödeme yaptı</span><span class="when">14d</span></div>
+            <div class="act"><span class="dot"></span><span class="who">Zeynep iade talebi</span><span class="when">32d</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="p4-pill compact" id="p4Pill" onclick="p4Toggle(event)">
+        <div class="p4-compact-items">
+          <button class="p4-icon-btn active" data-label="Özet" onclick="event.stopPropagation()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+          </button>
+          <button class="p4-icon-btn" data-label="Kullanıcılar" onclick="event.stopPropagation()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/></svg>
+          </button>
+          <button class="p4-icon-btn" data-label="Siparişler" onclick="event.stopPropagation()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/></svg>
+          </button>
+          <div class="p4-divider-v"></div>
+          <button class="p4-icon-btn" data-label="Ürünler" onclick="event.stopPropagation()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/></svg>
+          </button>
+          <button class="p4-icon-btn" data-label="Raporlar" onclick="event.stopPropagation()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          </button>
+          <div class="p4-divider-v"></div>
+          <button class="p4-icon-btn" data-label="Genişlet">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+
+        <div class="p4-exp-body">
+          <div class="p4-exp-head">
+            <div class="p4-exp-title">Navigasyon</div>
+            <button class="p4-exp-close" onclick="p4Close(event)">×</button>
+          </div>
+          <div class="p4-exp-list">
+            <div class="p4-exp-item active">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+              Özet
+            </div>
+            <div class="p4-exp-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/></svg>
+              Kullanıcılar
+              <span class="badge">42</span>
+            </div>
+            <div class="p4-exp-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/></svg>
+              Siparişler
+              <span class="badge">48</span>
+            </div>
+            <div class="p4-exp-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/></svg>
+              Ürünler
+            </div>
+            <div class="p4-exp-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/></svg>
+              Raporlar
+            </div>
+            <div class="p4-exp-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              Destek
+              <span class="badge">12</span>
+            </div>
+            <div class="p4-exp-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6"/></svg>
+              Ayarlar
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="foot">
+  4 island variations // Geist + JetBrains Mono // neon accent #B8FF00
+</div>
+
+<script>
+// Switcher
+const btns = document.querySelectorAll('.switcher-btn');
+const patterns = document.querySelectorAll('.pattern');
+
+btns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = btn.dataset.pattern;
+    btns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    patterns.forEach(p => p.classList.toggle('active', p.dataset.pattern === target));
+    window.scrollTo({ top: document.querySelector('.stage').offsetTop - 40, behavior: 'smooth' });
+  });
+});
+
+// ========== P1: Bottom Dock ==========
+const p1Island = document.getElementById('p1Island');
+function p1Toggle(e) {
+  e.stopPropagation();
+  if (p1Island.classList.contains('expanded')) {
+    p1Close(e);
+  } else {
+    p1Island.classList.remove('compact');
+    p1Island.classList.add('expanded');
+  }
+}
+function p1Close(e) {
+  e.stopPropagation();
+  p1Island.classList.remove('expanded');
+  p1Island.classList.add('compact');
+}
+
+// ========== P2: Stacked ==========
+const p2Cluster = document.getElementById('p2Cluster');
+function p2Toggle(e, id) {
+  e.stopPropagation();
+  const target = e.currentTarget;
+  if (target.classList.contains('active')) return;
+  p2Cluster.querySelectorAll('.p2-pill').forEach(p => p.classList.remove('active'));
+  target.classList.add('active');
+  p2Cluster.classList.add('has-active');
+}
+function p2Close(e) {
+  e.stopPropagation();
+  p2Cluster.querySelectorAll('.p2-pill').forEach(p => p.classList.remove('active'));
+  p2Cluster.classList.remove('has-active');
+}
+
+// ========== P3: Ambient ==========
+const p3Bar = document.getElementById('p3Bar');
+function p3OpenSearch(e) {
+  e.stopPropagation();
+  p3Bar.classList.add('searching');
+}
+function p3CloseSearch() {
+  p3Bar.classList.remove('searching');
+}
+
+// ========== P4: Side pill ==========
+const p4Pill = document.getElementById('p4Pill');
+function p4Toggle(e) {
+  e.stopPropagation();
+  if (p4Pill.classList.contains('expanded')) return;
+  p4Pill.classList.remove('compact');
+  p4Pill.classList.add('expanded');
+}
+function p4Close(e) {
+  e.stopPropagation();
+  p4Pill.classList.remove('expanded');
+  p4Pill.classList.add('compact');
+}
+
+// Outside click to close all
+document.addEventListener('click', (e) => {
+  if (p1Island && p1Island.classList.contains('expanded') && !p1Island.contains(e.target)) {
+    p1Island.classList.remove('expanded');
+    p1Island.classList.add('compact');
+  }
+  if (p2Cluster && p2Cluster.classList.contains('has-active') && !p2Cluster.contains(e.target)) {
+    p2Cluster.querySelectorAll('.p2-pill').forEach(p => p.classList.remove('active'));
+    p2Cluster.classList.remove('has-active');
+  }
+  if (p3Bar && p3Bar.classList.contains('searching') && !p3Bar.contains(e.target)) {
+    p3Bar.classList.remove('searching');
+  }
+  if (p4Pill && p4Pill.classList.contains('expanded') && !p4Pill.contains(e.target)) {
+    p4Pill.classList.remove('expanded');
+    p4Pill.classList.add('compact');
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (p1Island.classList.contains('expanded')) { p1Island.classList.remove('expanded'); p1Island.classList.add('compact'); }
+    if (p2Cluster.classList.contains('has-active')) { p2Cluster.querySelectorAll('.p2-pill').forEach(p => p.classList.remove('active')); p2Cluster.classList.remove('has-active'); }
+    if (p3Bar.classList.contains('searching')) { p3Bar.classList.remove('searching'); }
+    if (p4Pill.classList.contains('expanded')) { p4Pill.classList.remove('expanded'); p4Pill.classList.add('compact'); }
+  }
+});
+
+window.p1Toggle = p1Toggle;
+window.p1Close = p1Close;
+window.p2Toggle = p2Toggle;
+window.p2Close = p2Close;
+window.p3OpenSearch = p3OpenSearch;
+window.p4Toggle = p4Toggle;
+window.p4Close = p4Close;
+</script>
+
+</body>
+</html>

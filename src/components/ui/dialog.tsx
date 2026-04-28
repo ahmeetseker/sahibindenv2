@@ -15,9 +15,9 @@ export interface DialogProps {
 }
 
 const sizeMap = {
-  sm: "max-w-md",
-  md: "max-w-xl",
-  lg: "max-w-3xl",
+  sm: "max-w-sm",
+  md: "max-w-md",
+  lg: "max-w-xl",
 } as const;
 
 export function Dialog({
@@ -61,18 +61,18 @@ export function Dialog({
             exit={{ opacity: 0, scale: 0.95, y: 8 }}
             transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
             className={cn(
-              "fixed left-1/2 top-1/2 z-[70] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-border/60 bg-background/95 shadow-[0_40px_80px_-30px_rgba(0,0,0,0.6)] backdrop-blur-xl",
+              "fixed left-1/2 top-1/2 z-[70] flex w-[calc(100%-2rem)] max-h-[calc(100dvh-6rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-border/60 bg-background/95 shadow-[0_40px_80px_-30px_rgba(0,0,0,0.6)] backdrop-blur-xl",
               sizeMap[size],
               className,
             )}
           >
-            <div className="flex items-start justify-between gap-4 border-b border-border/50 px-6 pb-4 pt-5">
-              <div>
-                <h2 className="font-serif text-2xl font-light leading-tight tracking-tight">
+            <div className="flex flex-none items-start justify-between gap-3 border-b border-border/50 px-4 pb-2.5 pt-3">
+              <div className="min-w-0">
+                <h2 className="font-serif text-base font-medium leading-tight tracking-tight">
                   {title}
                 </h2>
                 {description && (
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
                     {description}
                   </p>
                 )}
@@ -81,14 +81,14 @@ export function Dialog({
                 type="button"
                 onClick={onClose}
                 aria-label="Kapat"
-                className="flex h-8 w-8 flex-none items-center justify-center rounded-lg border border-border/60 bg-background/40 text-muted-foreground transition-colors hover:bg-background/70 hover:text-foreground"
+                className="flex h-7 w-7 flex-none items-center justify-center rounded-md border border-border/60 bg-background/40 text-muted-foreground transition-colors hover:bg-background/70 hover:text-foreground"
               >
-                <X className="h-3.5 w-3.5" />
+                <X className="h-3 w-3" />
               </button>
             </div>
-            <div className="px-6 py-5">{children}</div>
+            <div className="flex-1 overflow-y-auto px-4 py-3">{children}</div>
             {footer && (
-              <div className="flex items-center justify-end gap-2 border-t border-border/50 bg-background/40 px-6 py-3">
+              <div className="flex flex-none items-center justify-end gap-2 border-t border-border/50 bg-background/40 px-4 py-2">
                 {footer}
               </div>
             )}
@@ -120,13 +120,13 @@ export function Field({ label, hint, children }: FieldProps) {
 }
 
 export const inputClass =
-  "w-full rounded-xl border border-border/60 bg-background/40 px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-stone-700/50 dark:focus:border-stone-300/50";
+  "w-full rounded-lg border border-border/60 bg-background/40 px-2.5 py-1.5 text-sm outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-stone-700/50 dark:focus:border-stone-300/50";
 
 export const buttonPrimary =
-  "inline-flex items-center justify-center gap-2 rounded-xl bg-foreground px-4 py-2 text-sm font-medium text-background shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50";
+  "inline-flex items-center justify-center gap-1.5 rounded-lg bg-foreground px-3 py-1.5 text-xs font-medium text-background shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50";
 
 export const buttonGhost =
-  "inline-flex items-center justify-center gap-2 rounded-xl border border-border/60 bg-background/40 px-4 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-background/70";
+  "inline-flex items-center justify-center gap-1.5 rounded-lg border border-border/60 bg-background/40 px-3 py-1.5 text-xs font-medium text-foreground/80 transition-colors hover:bg-background/70";
 
 export const buttonDanger =
-  "inline-flex items-center justify-center gap-2 rounded-xl border border-red-700/40 bg-red-600/10 px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-600/20 dark:text-red-300";
+  "inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-700/40 bg-red-600/10 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-600/20 dark:text-red-300";

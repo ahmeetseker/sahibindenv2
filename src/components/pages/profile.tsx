@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Bell,
   Building2,
@@ -28,13 +28,27 @@ import {
 import { useStore } from "@/lib/store";
 import { PageShell } from "./page-shell";
 
+import {
+  PROFILE_SHORTCUT_IDS,
+  PROFILE_OPEN_MODAL_EVENT,
+  type ProfileShortcutId,
+} from "./profile-shortcuts";
+import {
+  GeneralSettingsModal,
+  WorkshopInfoModal,
+  TeamRoleModal,
+  IntegrationModal,
+  SecurityModal,
+  NotificationsModal,
+} from "./profile-modals";
+
 const shortcuts = [
-  { icon: Settings2, label: "Genel ayarlar", desc: "Dil, tema, bildirim sesleri" },
-  { icon: Users, label: "Ekip & rol", desc: "4 kişilik ekip · roller ve davetler" },
-  { icon: Building2, label: "Atölye bilgisi", desc: "İletişim, vergi numarası, logo" },
-  { icon: Key, label: "Entegrasyon & API", desc: "WhatsApp, Tapu, e-imza" },
-  { icon: Shield, label: "Güvenlik", desc: "Şifre, 2FA, oturum geçmişi" },
-  { icon: Bell, label: "Bildirim tercihleri", desc: "Sıcak müşteri, evrak, kaparo" },
+  { id: PROFILE_SHORTCUT_IDS.general, icon: Settings2, label: "Genel ayarlar", desc: "Dil, tema, bildirim sesleri" },
+  { id: PROFILE_SHORTCUT_IDS.team, icon: Users, label: "Ekip & rol", desc: "4 kişilik ekip · roller ve davetler" },
+  { id: PROFILE_SHORTCUT_IDS.workshop, icon: Building2, label: "Atölye bilgisi", desc: "İletişim, vergi numarası, logo" },
+  { id: PROFILE_SHORTCUT_IDS.integration, icon: Key, label: "Entegrasyon & API", desc: "WhatsApp, Tapu, e-imza" },
+  { id: PROFILE_SHORTCUT_IDS.security, icon: Shield, label: "Güvenlik", desc: "Şifre, 2FA, oturum geçmişi" },
+  { id: PROFILE_SHORTCUT_IDS.notifications, icon: Bell, label: "Bildirim tercihleri", desc: "Sıcak müşteri, evrak, kaparo" },
 ];
 
 const sessions = [
@@ -48,6 +62,16 @@ export function ProfilePage() {
   const [editing, setEditing] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const [form, setForm] = useState(profile);
+  const [openShortcut, setOpenShortcut] = useState<ProfileShortcutId | null>(null);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<ProfileShortcutId>).detail;
+      if (detail) setOpenShortcut(detail);
+    };
+    window.addEventListener(PROFILE_OPEN_MODAL_EVENT, handler);
+    return () => window.removeEventListener(PROFILE_OPEN_MODAL_EVENT, handler);
+  }, []);
 
   const openEdit = () => {
     setForm(profile);
@@ -157,8 +181,10 @@ export function ProfilePage() {
               return (
                 <button
                   key={s.label}
+                  id={s.id}
                   type="button"
-                  className="flex items-start gap-3 rounded-xl border border-border/40 bg-background/30 p-3 text-left transition-colors hover:bg-background/60"
+                  onClick={() => setOpenShortcut(s.id)}
+                  className="scroll-mt-24 flex items-start gap-3 rounded-xl border border-border/40 bg-background/30 p-3 text-left transition-colors hover:bg-background/60 hover:border-border focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-500/40"
                 >
                   <div className="flex h-9 w-9 flex-none items-center justify-center rounded-lg bg-stone-700/10 text-stone-800 dark:bg-stone-200/10 dark:text-stone-200">
                     <Icon className="h-4 w-4" />
@@ -275,6 +301,31 @@ export function ProfilePage() {
           </Field>
         </div>
       </Dialog>
+
+      <GeneralSettingsModal
+        open={openShortcut === PROFILE_SHORTCUT_IDS.general}
+        onClose={() => setOpenShortcut(null)}
+      />
+      <WorkshopInfoModal
+        open={openShortcut === PROFILE_SHORTCUT_IDS.workshop}
+        onClose={() => setOpenShortcut(null)}
+      />
+      <TeamRoleModal
+        open={openShortcut === PROFILE_SHORTCUT_IDS.team}
+        onClose={() => setOpenShortcut(null)}
+      />
+      <IntegrationModal
+        open={openShortcut === PROFILE_SHORTCUT_IDS.integration}
+        onClose={() => setOpenShortcut(null)}
+      />
+      <SecurityModal
+        open={openShortcut === PROFILE_SHORTCUT_IDS.security}
+        onClose={() => setOpenShortcut(null)}
+      />
+      <NotificationsModal
+        open={openShortcut === PROFILE_SHORTCUT_IDS.notifications}
+        onClose={() => setOpenShortcut(null)}
+      />
 
       <Dialog
         open={confirmReset}
